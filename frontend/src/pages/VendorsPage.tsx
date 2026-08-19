@@ -55,14 +55,14 @@ export function VendorsPage() {
         <>
           <Card>
             <CardContent className="flex flex-col gap-1">
-              <h3 className="font-mono text-[11px] uppercase tracking-wide text-text-dim">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Weighted score model
               </h3>
-              <p className="text-sm text-text-mid">
-                Price <span className="text-gold-hi">40%</span> · Reliability &amp; warranty{" "}
-                <span className="text-sage-hi">30%</span> · Delivery{" "}
-                <span className="text-blue-400">20%</span> · Return/refund policy{" "}
-                <span className="text-purple-400">10%</span> — applied only to vendors that already
+              <p className="text-sm text-ink-soft">
+                Price <span className="text-money font-medium">40%</span> · Reliability &amp; warranty{" "}
+                <span className="text-success font-medium">30%</span> · Delivery{" "}
+                <span className="text-brand font-medium">20%</span> · Return/refund policy{" "}
+                <span className="text-ink font-medium">10%</span> — applied only to vendors that already
                 cleared the hard-constraint firewall.
               </p>
             </CardContent>
@@ -70,7 +70,7 @@ export function VendorsPage() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-text-dim" aria-hidden="true" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-ink-faint" aria-hidden="true" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -103,8 +103,8 @@ export function VendorsPage() {
                   className={cn(
                     "text-xs font-medium px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap",
                     hardFilter === f
-                      ? "border-gold/50 bg-gold/10 text-gold-hi"
-                      : "border-line text-text-mid hover:bg-ink-800"
+                      ? "border-brand/40 bg-brand-soft text-brand"
+                      : "border-border text-ink-soft hover:bg-surface-muted"
                   )}
                 >
                   {f}

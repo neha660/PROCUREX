@@ -24,11 +24,11 @@ export function VendorFirewallGate({
   return (
     <div className="relative">
       <div className="flex items-center gap-2 mb-3">
-        <div className="h-px flex-1 bg-line" />
-        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-gold px-2">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground px-2">
           Zero-trust constraint firewall
         </span>
-        <div className="h-px flex-1 bg-line" />
+        <div className="h-px flex-1 bg-border" />
       </div>
 
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -42,22 +42,22 @@ export function VendorFirewallGate({
             <li
               key={fw.vendor_id}
               className={cn(
-                "animate-gate-pass rounded-lg border p-3.5 flex flex-col gap-2 min-w-0",
-                passed ? "border-sage/30 bg-sage/[0.06]" : "border-coral/30 bg-coral/[0.06]"
+                "animate-gate-pass rounded-lg border p-3.5 flex flex-col gap-2 min-w-0 bg-card",
+                passed ? "border-success/25" : "border-danger/25"
               )}
               style={{ animationDelay: `${i * 60}ms` }}
             >
               <div className="flex items-start justify-between gap-2 min-w-0">
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-text-hi truncate">{vendor.name}</div>
-                  <div className="font-mono text-[11px] text-text-dim mt-0.5 truncate">
+                  <div className="text-sm font-medium text-foreground truncate">{vendor.name}</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5 truncate tabular-nums">
                     {inr(vendor.unit_price_inr)}/unit · {vendor.delivery_days}d delivery
                   </div>
                 </div>
                 <span
                   className={cn(
                     "shrink-0 mt-0.5 h-5 w-5 rounded-full flex items-center justify-center",
-                    passed ? "bg-sage text-ink-950" : "bg-coral text-ink-950"
+                    passed ? "bg-success text-white" : "bg-danger text-white"
                   )}
                   aria-hidden="true"
                 >
@@ -69,7 +69,7 @@ export function VendorFirewallGate({
                 <div
                   className={cn(
                     "font-mono text-[10px] px-1.5 py-0.5 rounded w-fit max-w-full truncate",
-                    gstin.verdict ? "bg-ink-800 text-text-dim" : "bg-coral/20 text-coral-hi"
+                    gstin.verdict ? "bg-surface-muted text-ink-soft" : "bg-danger-soft text-danger"
                   )}
                   title={`GSTIN ${gstin.verdict ? "verified" : "invalid"} · ${vendor.gstin}${gstin.is_msme_udyam ? " · MSME/Udyam" : ""}`}
                 >
@@ -79,14 +79,14 @@ export function VendorFirewallGate({
               )}
 
               {!passed && (
-                <ul className="text-xs text-coral-hi/90 space-y-0.5 mt-0.5">
+                <ul className="text-xs text-danger/90 space-y-0.5 mt-0.5">
                   {fw.reasons_failed.map((r, idx) => (
                     <li key={idx}>· {r}</li>
                   ))}
                 </ul>
               )}
               {passed && (
-                <p className="text-xs text-sage-hi/90 mt-0.5">
+                <p className="text-xs text-success/90 mt-0.5">
                   Cleared spec, delivery-SLA, warranty &amp; GSTIN checks
                 </p>
               )}

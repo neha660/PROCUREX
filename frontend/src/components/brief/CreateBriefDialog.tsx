@@ -142,24 +142,24 @@ export function CreateBriefDialog({
             <li key={s.label} className="flex items-center gap-1.5 flex-1">
               <div
                 className={`h-7 w-7 rounded-full flex items-center justify-center text-xs shrink-0 ${
-                  i <= step ? "bg-gold text-ink-950" : "bg-ink-800 text-text-dim"
+                  i <= step ? "bg-brand text-white" : "bg-surface-muted text-ink-faint"
                 }`}
                 aria-current={i === step ? "step" : undefined}
               >
                 <s.icon className="h-3.5 w-3.5" aria-hidden="true" />
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`h-px flex-1 ${i < step ? "bg-gold/50" : "bg-ink-700"}`} aria-hidden="true" />
+                <div className={`h-px flex-1 ${i < step ? "bg-brand/50" : "bg-border-strong"}`} aria-hidden="true" />
               )}
             </li>
           ))}
         </ol>
-        <p className="text-xs font-mono uppercase tracking-wide text-text-dim -mt-1 mb-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground -mt-1 mb-2">
           Step {step + 1} of {STEPS.length} — {STEPS[step].label}
         </p>
 
         {error && (
-          <div className="text-sm text-coral-hi bg-coral/10 border border-coral/30 rounded-md p-3">
+          <div className="text-sm text-danger bg-danger-soft border border-danger/20 rounded-md p-3">
             {error}
           </div>
         )}
@@ -231,7 +231,7 @@ export function CreateBriefDialog({
                 Warranty required <HardBadge />
               </Label>
             </div>
-            <p className="col-span-2 text-[11px] text-text-dim">
+            <p className="col-span-2 text-[11px] text-muted-foreground">
               Fields marked <HardBadge /> are hard constraints — the deterministic firewall
               rejects any vendor that fails them, no exceptions.
             </p>
@@ -240,25 +240,25 @@ export function CreateBriefDialog({
 
         {step === 2 && (
           <div className="flex flex-col gap-3">
-            <div className="rounded-lg border border-line p-4 flex flex-col gap-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-dim">Shared pool total</span>
-                <span className="text-text-hi font-medium">{inr(pool?.total_inr)}</span>
+            <div className="rounded-lg border border-border bg-surface-muted/50 p-4 flex flex-col gap-2 text-sm">
+              <div className="flex justify-between tabular-nums">
+                <span className="text-muted-foreground">Shared pool total</span>
+                <span className="text-foreground font-medium">{inr(pool?.total_inr)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-dim">Already committed</span>
-                <span className="text-text-hi font-medium">{inr(pool?.allocated_inr)}</span>
+              <div className="flex justify-between tabular-nums">
+                <span className="text-muted-foreground">Already committed</span>
+                <span className="text-foreground font-medium">{inr(pool?.allocated_inr)}</span>
               </div>
               <Separator />
-              <div className="flex justify-between">
-                <span className="text-text-dim">This brief's ceiling</span>
-                <span className="text-gold-hi font-medium">
+              <div className="flex justify-between tabular-nums">
+                <span className="text-muted-foreground">This brief's ceiling</span>
+                <span className="text-money font-medium">
                   {inr(draft.max_unit_price_inr * draft.quantity)}
                 </span>
               </div>
             </div>
-            <p className="text-sm text-text-mid">
-              This brief draws from the <strong className="text-text-hi">same shared pool</strong> as
+            <p className="text-sm text-ink-soft">
+              This brief draws from the <strong className="text-foreground">same shared pool</strong> as
               every other Ignite '26 brief — not an isolated budget. If its negotiated price exceeds
               its own cap, ProcureX checks banked savings from other briefs before ever escalating to
               you.
@@ -268,14 +268,14 @@ export function CreateBriefDialog({
 
         {step === 3 && (
           <div className="flex flex-col gap-3 text-sm">
-            <p className="text-text-mid">Ready to discover vendors for:</p>
-            <div className="rounded-lg border border-line p-4">
-              <div className="font-display text-base font-semibold text-text-hi">{draft.title}</div>
-              <div className="text-text-mid mt-1">
+            <p className="text-ink-soft">Ready to discover vendors for:</p>
+            <div className="rounded-lg border border-border bg-surface-muted/50 p-4">
+              <div className="font-display text-base font-semibold text-foreground">{draft.title}</div>
+              <div className="text-ink-soft mt-1 tabular-nums">
                 Qty {draft.quantity} · cap {inr(draft.max_unit_price_inr)}/unit · ≤{draft.max_delivery_days}d delivery
               </div>
             </div>
-            <p className="text-text-dim text-xs">
+            <p className="text-muted-foreground text-xs">
               ProcureX will run vendor discovery, the constraint firewall, weighted scoring, and
               authorisation for this brief immediately, using the same pipeline as the seeded
               briefs.
@@ -305,7 +305,7 @@ export function CreateBriefDialog({
           )}
           {step === 2 && <Button onClick={() => setStep(3)}>Continue</Button>}
           {step === 3 && (
-            <Button onClick={handleCreate} disabled={submitting} className="gap-1.5 bg-gold text-ink-950 hover:bg-gold-hi">
+            <Button onClick={handleCreate} disabled={submitting} className="gap-1.5">
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {submitting ? "Starting…" : "Start vendor discovery"}
             </Button>
@@ -329,7 +329,7 @@ function Field({ label, hard, children }: { label: string; hard?: boolean; child
 
 function HardBadge() {
   return (
-    <Badge variant="outline" className="border-gold/40 text-gold-hi text-[10px] px-1.5 py-0">
+    <Badge variant="outline" className="border-money/30 text-money text-[10px] px-1.5 py-0">
       hard
     </Badge>
   );

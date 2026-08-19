@@ -36,10 +36,13 @@ deliberately hostile "QuickLED Traders" listing used to demo the
 prompt-injection defense and GSTIN checksum rejection.
 
 **No API key is required to run or demo this.** The LLM layer (`llm.py`)
-has a deterministic offline fallback for every Gemini call, so the whole
+has a deterministic offline fallback for every call, so the whole
 pipeline — firewall, scoring, negotiation, reallocation, audit trail — runs
-end to end with zero external dependency. Add a `GEMINI_API_KEY` later if
-you want live natural-language reasoning instead of the mock text.
+end to end with zero external dependency. Add an `OPENROUTER_API_KEY` later
+if you want live natural-language reasoning instead of the mock text — it
+calls [OpenRouter](https://openrouter.ai)'s OpenAI-compatible endpoint, so
+one key gets you Gemini, Claude, GPT, Llama, and hundreds of other models;
+swap which one by changing `OPENROUTER_MODEL`.
 
 ## Prerequisites
 
@@ -61,11 +64,16 @@ cd backend
 python -m venv .venv
 source .venv/Scripts/activate      # Git Bash on Windows
 pip install -r requirements.txt
-cp .env.example .env               # optional — only needed for live Gemini calls
+cp .env.example .env               # optional — only needed for live LLM calls
 ```
 
-If you want live Gemini reasoning instead of the offline mock, open `.env`
-and set `GEMINI_API_KEY=your-key-here`.
+If you want live LLM reasoning instead of the offline mock, open `.env`
+and set `OPENROUTER_API_KEY=your-key-here`. `OPENROUTER_MODEL` defaults to
+`~google/gemini-flash-latest` — the leading `~` is OpenRouter's
+self-updating alias syntax, so it always resolves to the current Gemini
+Flash model instead of pinning a dated version that can get retired
+mid-hackathon. Any concrete model slug works too — see
+[openrouter.ai/models](https://openrouter.ai/models).
 
 Run the API:
 
@@ -75,7 +83,7 @@ uvicorn app.main:app --port 8000
 
 Leave this running. Check it's alive at http://127.0.0.1:8000/api/health —
 you should see `{"status":"ok","llm_available":false}` (or `true` if you
-set a Gemini key).
+set an OpenRouter key).
 
 > **Skip `--reload` if this folder lives under OneDrive** (as `procurex`
 > does by default). OneDrive's background sync touches files in ways that
@@ -150,7 +158,7 @@ procurex/
 │   │   ├── scorer.py        # Stage 2 weighted-sum model
 │   │   ├── negotiator.py    # bulk-tier RFQ simulation
 │   │   ├── budget.py        # shared-pool allocator
-│   │   ├── llm.py           # Gemini layer + offline fallback
+│   │   ├── llm.py           # OpenRouter layer + offline fallback
 │   │   ├── planner.py       # orchestration state machine
 │   │   ├── audit.py         # structured audit log
 │   │   └── main.py          # FastAPI app

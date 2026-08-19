@@ -7,7 +7,7 @@ export interface BudgetSegment {
   colorClass: string;
 }
 
-const SEGMENT_COLORS = ["bg-gold", "bg-sage", "bg-coral", "bg-blue-400", "bg-purple-400"];
+const SEGMENT_COLORS = ["bg-chart-1", "bg-chart-2", "bg-chart-3", "bg-chart-4", "bg-chart-5"];
 
 /** Seed briefs are titled "N Category — Section" (e.g. "10 High-Spec
  * Laptops — AI Arena"); custom briefs from the wizard keep whatever

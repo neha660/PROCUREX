@@ -23,13 +23,13 @@ export function SettingsPage() {
 
       <Card>
         <CardContent className="flex flex-col gap-3">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-text-dim">Workspace</h3>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-text-hi font-medium">{MOCK_SETTINGS.workspace.name}</p>
-              <p className="text-sm text-text-dim">{MOCK_SETTINGS.workspace.description}</p>
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Workspace</h3>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-foreground font-medium truncate">{MOCK_SETTINGS.workspace.name}</p>
+              <p className="text-sm text-muted-foreground truncate">{MOCK_SETTINGS.workspace.description}</p>
             </div>
-            <Badge variant="outline" className="border-gold/40 text-gold-hi">
+            <Badge variant="outline" className="border-money/25 text-money shrink-0 tabular-nums">
               {inr(pipeline?.pool.total_inr ?? MOCK_SETTINGS.workspace.sharedPoolInr)} pool
             </Badge>
           </div>
@@ -38,18 +38,18 @@ export function SettingsPage() {
 
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-text-dim">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Approval limits by role
           </h3>
           {MOCK_SETTINGS.approvalLimits.map((r, i) => (
             <div key={r.role}>
               {i > 0 && <Separator className="mb-4" />}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-text-hi font-medium">{r.role}</p>
-                  <p className="text-xs text-text-dim">{r.note}</p>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-foreground font-medium truncate">{r.role}</p>
+                  <p className="text-xs text-muted-foreground truncate">{r.note}</p>
                 </div>
-                <span className="text-sm font-mono text-text-hi">{inr(r.autoApproveUpToInr)}</span>
+                <span className="text-sm font-mono text-foreground tabular-nums shrink-0">{inr(r.autoApproveUpToInr)}</span>
               </div>
             </div>
           ))}
@@ -58,14 +58,14 @@ export function SettingsPage() {
 
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-text-dim">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Notifications
           </h3>
           {MOCK_SETTINGS.notificationPrefs.map((p, i) => (
             <div key={p.id}>
               {i > 0 && <Separator className="mb-4" />}
-              <div className="flex items-center justify-between">
-                <label htmlFor={p.id} className="text-sm text-text-hi">
+              <div className="flex items-center justify-between gap-3">
+                <label htmlFor={p.id} className="text-sm text-foreground">
                   {p.label}
                 </label>
                 <Switch id={p.id} defaultChecked={p.enabled} />
@@ -77,15 +77,15 @@ export function SettingsPage() {
 
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <h3 className="font-mono text-[11px] uppercase tracking-wide text-text-dim">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Integrations
           </h3>
           {MOCK_SETTINGS.integrations.map((integration, i) => (
             <div key={integration.id}>
               {i > 0 && <Separator className="mb-4" />}
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-text-hi">{integration.name}</span>
-                <span className="text-xs font-mono text-text-dim">{integration.status}</span>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-foreground">{integration.name}</span>
+                <span className="text-xs font-mono text-muted-foreground text-right">{integration.status}</span>
               </div>
             </div>
           ))}

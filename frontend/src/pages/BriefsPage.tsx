@@ -42,7 +42,7 @@ export function BriefsPage() {
         title="Buying briefs"
         description="Every procurement request Ignite '26 has raised — read together, scored against one shared pool."
         actions={
-          <Button onClick={openCreateBrief} size="sm" className="bg-gold text-ink-950 hover:bg-gold-hi gap-1.5">
+          <Button onClick={openCreateBrief} size="sm" className="gap-1.5">
             <Plus className="h-4 w-4" />
             Create buying brief
           </Button>
@@ -65,7 +65,7 @@ export function BriefsPage() {
 
           <div className="flex flex-col sm:flex-row gap-3 mb-5">
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-text-dim" aria-hidden="true" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-ink-faint" aria-hidden="true" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -83,8 +83,8 @@ export function BriefsPage() {
                   className={cn(
                     "text-xs font-medium px-3 py-1.5 rounded-full border transition-colors",
                     filter === f
-                      ? "border-gold/50 bg-gold/10 text-gold-hi"
-                      : "border-line text-text-mid hover:bg-ink-800"
+                      ? "border-brand/40 bg-brand-soft text-brand"
+                      : "border-border text-ink-soft hover:bg-surface-muted"
                   )}
                 >
                   {f}
@@ -106,7 +106,7 @@ export function BriefsPage() {
               }
               action={
                 briefs.length === 0 && (
-                  <Button onClick={openCreateBrief} size="sm" className="bg-gold text-ink-950 hover:bg-gold-hi">
+                  <Button onClick={openCreateBrief} size="sm">
                     Create buying brief
                   </Button>
                 )

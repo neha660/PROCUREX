@@ -8,24 +8,24 @@ import { recommendedAction, type VendorRow } from "@/lib/vendorRows";
 
 function PassFailIcon({ passed }: { passed: boolean }) {
   return passed ? (
-    <span className="inline-flex items-center gap-1 text-sage-hi">
+    <span className="inline-flex items-center gap-1 text-success whitespace-nowrap">
       <Check className="h-3.5 w-3.5" aria-hidden="true" /> Passed
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-coral-hi">
+    <span className="inline-flex items-center gap-1 text-danger whitespace-nowrap">
       <X className="h-3.5 w-3.5" aria-hidden="true" /> Failed
     </span>
   );
 }
 
 function TrustIcon({ verdict }: { verdict: boolean | undefined }) {
-  if (verdict === undefined) return <span className="text-text-dim">—</span>;
+  if (verdict === undefined) return <span className="text-muted-foreground">—</span>;
   return verdict ? (
-    <span className="inline-flex items-center gap-1 text-sage-hi">
+    <span className="inline-flex items-center gap-1 text-success whitespace-nowrap">
       <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Verified
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-coral-hi">
+    <span className="inline-flex items-center gap-1 text-danger whitespace-nowrap">
       <ShieldX className="h-3.5 w-3.5" aria-hidden="true" /> Invalid
     </span>
   );
@@ -41,13 +41,13 @@ export function VendorDiscoveryTable({
   return (
     <>
       {/* Desktop / tablet: full comparison table */}
-      <div className="hidden md:block rounded-lg border border-line overflow-hidden">
+      <div className="hidden md:block rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-ink-800/60 border-line">
+            <TableRow className="bg-surface-muted hover:bg-surface-muted">
               {["Vendor", "Brief", "Source", "GSTIN trust", "Unit price", "Delivery", "Warranty", "Rating", "Hard filter", "Score", "Action"].map(
                 (h) => (
-                  <TableHead key={h} className="text-[11px] uppercase tracking-wide text-text-dim">
+                  <TableHead key={h} className="text-[11px] uppercase tracking-wide text-muted-foreground">
                     {h}
                   </TableHead>
                 )
@@ -63,42 +63,38 @@ export function VendorDiscoveryTable({
                 aria-label={`View detail for ${row.vendor.name}`}
                 onClick={() => onSelect(row)}
                 onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect(row))}
-                className={cn(
-                  "border-line cursor-pointer",
-                  row.isWinner && "bg-gold/[0.06]",
-                  !row.firewallResult.passed && "opacity-70"
-                )}
+                className={cn("cursor-pointer", row.isWinner && "bg-brand-soft/40", !row.firewallResult.passed && "opacity-60")}
               >
-                <TableCell className="font-medium text-text-hi">
+                <TableCell className="font-medium text-foreground">
                   {row.vendor.name}
-                  {row.isWinner && (
-                    <Badge className="ml-2 bg-gold/20 text-gold-hi text-[10px] uppercase">Selected</Badge>
-                  )}
+                  {row.isWinner && <Badge className="ml-2 bg-brand text-white text-[10px] uppercase">Selected</Badge>}
                   {row.gstinCheck?.is_msme_udyam && (
-                    <Badge variant="outline" className="ml-1.5 border-line text-[10px] text-text-dim">
+                    <Badge variant="outline" className="ml-1.5 text-[10px] text-muted-foreground">
                       MSME
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-text-mid">{row.brief.title.split(" — ").pop()}</TableCell>
-                <TableCell className="text-text-mid">{row.vendor.source}</TableCell>
+                <TableCell className="text-ink-soft max-w-[160px] truncate" title={row.brief.title}>
+                  {row.brief.title.split(" — ").pop()}
+                </TableCell>
+                <TableCell className="text-ink-soft">{row.vendor.source}</TableCell>
                 <TableCell><TrustIcon verdict={row.gstinCheck?.verdict} /></TableCell>
-                <TableCell className="text-text-hi">
+                <TableCell className="text-foreground tabular-nums">
                   {inr(row.vendor.unit_price_inr)}
                   {row.negotiation?.bulk_tier_applied && (
-                    <span className="block text-[10px] text-sage-hi font-mono">
+                    <span className="block text-[10px] text-success font-mono">
                       → {inr(row.negotiation.negotiated_unit_price_inr)} negotiated
                     </span>
                   )}
                 </TableCell>
-                <TableCell className="text-text-mid">{row.vendor.delivery_days}d</TableCell>
-                <TableCell className="text-text-mid">{row.vendor.has_warranty ? "Yes" : "No"}</TableCell>
-                <TableCell className="text-text-mid">{row.vendor.rating}★</TableCell>
+                <TableCell className="text-ink-soft">{row.vendor.delivery_days}d</TableCell>
+                <TableCell className="text-ink-soft">{row.vendor.has_warranty ? "Yes" : "No"}</TableCell>
+                <TableCell className="text-ink-soft">{row.vendor.rating}★</TableCell>
                 <TableCell><PassFailIcon passed={row.firewallResult.passed} /></TableCell>
-                <TableCell className="text-text-hi font-display">
+                <TableCell className="text-foreground font-display tabular-nums">
                   {row.scored ? row.scored.total_score : "—"}
                 </TableCell>
-                <TableCell className="text-text-mid text-xs whitespace-normal max-w-[220px]">
+                <TableCell className="text-ink-soft text-xs whitespace-normal max-w-[220px]">
                   {recommendedAction(row)}
                 </TableCell>
               </TableRow>
@@ -116,25 +112,25 @@ export function VendorDiscoveryTable({
               tabIndex={0}
               onClick={() => onSelect(row)}
               onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onSelect(row))}
-              className={cn("cursor-pointer", row.isWinner && "border-gold/40 bg-gold/[0.05]")}
+              className={cn("cursor-pointer", row.isWinner && "border-brand/30 bg-brand-soft/30")}
             >
               <CardContent className="flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="font-medium text-text-hi">{row.vendor.name}</div>
-                    <div className="text-xs text-text-dim">
+                <div className="flex items-start justify-between gap-2 min-w-0">
+                  <div className="min-w-0">
+                    <div className="font-medium text-foreground truncate">{row.vendor.name}</div>
+                    <div className="text-xs text-muted-foreground truncate">
                       {row.brief.title.split(" — ").pop()} · {row.vendor.source}
                     </div>
                   </div>
-                  {row.isWinner && <Badge className="bg-gold/20 text-gold-hi text-[10px]">Selected</Badge>}
+                  {row.isWinner && <Badge className="bg-brand text-white text-[10px] shrink-0">Selected</Badge>}
                 </div>
-                <div className="grid grid-cols-2 gap-1 text-xs text-text-mid">
+                <div className="grid grid-cols-2 gap-1 text-xs text-ink-soft tabular-nums">
                   <span>{inr(row.vendor.unit_price_inr)}/unit</span>
                   <span className="text-right">{row.vendor.delivery_days}d delivery</span>
                   <span><TrustIcon verdict={row.gstinCheck?.verdict} /></span>
                   <span className="text-right"><PassFailIcon passed={row.firewallResult.passed} /></span>
                 </div>
-                <p className="text-xs text-text-dim">{recommendedAction(row)}</p>
+                <p className="text-xs text-muted-foreground">{recommendedAction(row)}</p>
               </CardContent>
             </Card>
           </li>

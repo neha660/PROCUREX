@@ -39,10 +39,10 @@ export function PipelineStepper({
               <div
                 className={cn(
                   "h-5 w-5 rounded-full flex items-center justify-center transition-colors shrink-0",
-                  !done && "bg-ink-700",
-                  done && !isFinalBad && !isFinalPending && "bg-sage text-ink-950",
-                  done && isFinalBad && "bg-coral text-ink-950",
-                  done && isFinalPending && "bg-gold text-ink-950 animate-pulse-soft"
+                  !done && "bg-border-strong",
+                  done && !isFinalBad && !isFinalPending && "bg-success text-white",
+                  done && isFinalBad && "bg-danger text-white",
+                  done && isFinalPending && "bg-warning text-white animate-pulse-soft"
                 )}
                 aria-hidden="true"
               >
@@ -51,8 +51,8 @@ export function PipelineStepper({
               </div>
               <span
                 className={cn(
-                  "font-mono text-[10px] uppercase tracking-wide text-center leading-tight",
-                  done ? "text-text-mid" : "text-text-dim/60"
+                  "text-[10.5px] font-medium uppercase tracking-wide text-center leading-tight",
+                  done ? "text-ink-soft" : "text-ink-faint"
                 )}
               >
                 {stage}
@@ -66,10 +66,7 @@ export function PipelineStepper({
             </div>
             {i < STAGES.length - 1 && (
               <div
-                className={cn(
-                  "h-px w-6 md:w-10 mx-0.5 mt-2.5",
-                  i < activeIndex ? "bg-sage/50" : "bg-ink-700"
-                )}
+                className={cn("h-px w-6 md:w-10 mx-0.5 mt-2.5", i < activeIndex ? "bg-success/40" : "bg-border-strong")}
                 aria-hidden="true"
               />
             )}

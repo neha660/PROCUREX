@@ -50,15 +50,13 @@ export function EscalationDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg bg-ink-950 border-line p-0 gap-0">
-        <SheetHeader className="border-b border-line pr-12">
-          <div className="flex items-center gap-2 text-coral-hi mb-1">
+      <SheetContent side="right" className="w-full sm:max-w-lg p-0 gap-0">
+        <SheetHeader className="border-b border-border pr-12">
+          <div className="flex items-center gap-2 text-danger mb-1">
             <AlertTriangle className="h-4 w-4" aria-hidden="true" />
-            <span className="font-mono text-[11px] uppercase tracking-wide">
-              Human authority required
-            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wide">Human authority required</span>
           </div>
-          <SheetTitle className="font-display text-xl text-text-hi">
+          <SheetTitle className="font-display text-lg text-foreground truncate">
             {brief?.title || card.brief_id}
           </SheetTitle>
           <SheetDescription>
@@ -70,29 +68,29 @@ export function EscalationDrawer({
         <ScrollArea className="flex-1 h-[calc(100vh-11rem)]">
           <div className="p-6 flex flex-col gap-6 text-sm">
             {card.resolved ? (
-              <div className="rounded-lg border border-sage/30 bg-sage/[0.06] p-4 text-sage-hi flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              <div className="rounded-lg border border-success/20 bg-success-soft p-4 text-success flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
                 Resolved — {card.resolution}
               </div>
             ) : null}
 
             <div>
-              <h4 className="font-mono text-[11px] uppercase tracking-wide text-text-dim mb-2">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                 Reason for escalation
               </h4>
-              <p className="text-text-hi font-medium">{card.reason}</p>
-              <p className="text-text-mid mt-1">{card.context}</p>
+              <p className="text-foreground font-medium">{card.reason}</p>
+              <p className="text-ink-soft mt-1">{card.context}</p>
             </div>
 
             {ctx.failedConstraints.length > 0 && (
               <div>
-                <h4 className="font-mono text-[11px] uppercase tracking-wide text-text-dim mb-2">
+                <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                   Failed / unresolved constraints
                 </h4>
                 <ul className="flex flex-wrap gap-1.5">
                   {ctx.failedConstraints.map((c) => (
                     <li key={c}>
-                      <Badge variant="outline" className="border-coral/30 text-coral-hi">
+                      <Badge variant="outline" className="border-danger/25 text-danger">
                         {c}
                       </Badge>
                     </li>
@@ -104,26 +102,26 @@ export function EscalationDrawer({
             <Separator />
 
             <div>
-              <h4 className="font-mono text-[11px] uppercase tracking-wide text-text-dim mb-2">
+              <h4 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
                 Current best compliant alternative
               </h4>
               {ctx.alternative ? (
-                <div className="rounded-lg border border-line p-3 flex flex-col gap-1">
-                  <span className="text-text-hi font-medium">{ctx.alternative.vendor.name}</span>
-                  <span className="text-text-mid text-xs">
+                <div className="rounded-lg border border-border bg-surface-muted/50 p-3 flex flex-col gap-1">
+                  <span className="text-foreground font-medium">{ctx.alternative.vendor.name}</span>
+                  <span className="text-ink-soft text-xs tabular-nums">
                     {inr(ctx.alternative.vendor.unit_price_inr)}/unit · {ctx.alternative.vendor.delivery_days}d
                     delivery · score {ctx.alternative.total_score}/100
                   </span>
-                  <div className="flex gap-4 mt-1 text-xs">
+                  <div className="flex gap-4 mt-1 text-xs tabular-nums">
                     <span>
                       Cost difference:{" "}
-                      <strong className={ctx.costDiffInr && ctx.costDiffInr > 0 ? "text-coral-hi" : "text-sage-hi"}>
+                      <strong className={ctx.costDiffInr && ctx.costDiffInr > 0 ? "text-danger" : "text-success"}>
                         {ctx.costDiffInr !== null ? inr(ctx.costDiffInr) : "—"}
                       </strong>
                     </span>
                     <span>
                       Delivery impact:{" "}
-                      <strong className={ctx.deliveryImpactDays && ctx.deliveryImpactDays > 0 ? "text-coral-hi" : "text-sage-hi"}>
+                      <strong className={ctx.deliveryImpactDays && ctx.deliveryImpactDays > 0 ? "text-danger" : "text-success"}>
                         {ctx.deliveryImpactDays !== null
                           ? `${ctx.deliveryImpactDays > 0 ? "+" : ""}${ctx.deliveryImpactDays}d`
                           : "—"}
@@ -132,7 +130,7 @@ export function EscalationDrawer({
                   </div>
                 </div>
               ) : (
-                <p className="text-text-dim text-xs italic">
+                <p className="text-muted-foreground text-xs italic">
                   No compliant alternative exists in the current vendor pool — this needs new
                   sourcing, not a substitution.
                 </p>
@@ -143,7 +141,7 @@ export function EscalationDrawer({
               <Button
                 variant="ghost"
                 size="sm"
-                className="justify-start gap-1.5 text-text-mid -ml-2 w-fit"
+                className="justify-start gap-1.5 text-ink-soft -ml-2 w-fit"
                 onClick={() => navigate(`/audit#${ctx.summary!.audit_entry.transaction_id}`)}
               >
                 <FileText className="h-3.5 w-3.5" />
@@ -154,11 +152,11 @@ export function EscalationDrawer({
         </ScrollArea>
 
         {!card.resolved && (
-          <SheetFooter className="border-t border-line flex-row gap-2 flex-wrap">
+          <SheetFooter className="border-t border-border flex-row gap-2 flex-wrap">
             <Button
               onClick={() => act("Approve exception", "Approve exception — human override authorised")}
               disabled={!!busy}
-              className="bg-sage text-ink-950 hover:bg-sage-hi gap-1.5 flex-1 min-w-[9rem]"
+              className="bg-success text-white hover:bg-success/90 gap-1.5 flex-1 min-w-[9rem]"
             >
               {busy === "Approve exception" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
               Approve exception
@@ -170,7 +168,7 @@ export function EscalationDrawer({
               }
               disabled={!!busy || !ctx.alternative}
               variant="outline"
-              className="border-line gap-1.5 flex-1 min-w-[9rem]"
+              className="gap-1.5 flex-1 min-w-[9rem]"
               title={!ctx.alternative ? "No compliant alternative exists" : undefined}
             >
               {busy === "Choose fallback" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />}
@@ -180,7 +178,7 @@ export function EscalationDrawer({
               onClick={() => act("Request re-plan", "Requested re-plan — sent back to vendor discovery")}
               disabled={!!busy}
               variant="outline"
-              className="border-line gap-1.5 flex-1 min-w-[9rem]"
+              className="gap-1.5 flex-1 min-w-[9rem]"
             >
               {busy === "Request re-plan" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               Request re-plan

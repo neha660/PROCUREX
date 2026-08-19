@@ -25,27 +25,29 @@ export function OverviewPage() {
   );
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-10">
       {/* ---- Hero -------------------------------------------------- */}
-      <section className="rounded-2xl border border-line bg-gradient-to-br from-ink-900 to-ink-950 p-6 md:p-10 flex flex-col gap-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-gold-hi bg-gold/10 border border-gold/30 rounded-full px-3 py-1">
-            {daysUntilIgnite26()} days until Ignite '26
-          </span>
-        </div>
-        <h1 className="font-display text-3xl md:text-4xl font-semibold text-text-hi max-w-2xl leading-tight">
+      <section className="rounded-xl border border-border bg-navy-950 p-7 md:p-10 flex flex-col gap-5">
+        <span className="w-fit text-[11px] font-semibold uppercase tracking-[0.08em] text-navy-text-soft bg-navy-800 border border-navy-line rounded-full px-3 py-1">
+          {daysUntilIgnite26()} days until Ignite '26
+        </span>
+        <h1 className="font-display text-3xl md:text-[2.5rem] font-semibold text-navy-text max-w-2xl leading-[1.15] tracking-tight">
           Procurement, under control.
         </h1>
-        <p className="text-text-mid max-w-xl">
+        <p className="text-navy-text-soft max-w-xl leading-relaxed">
           Autonomous where it can be. Accountable where it must be. ProcureX reads every buying
           brief against one shared pool, negotiates, and escalates only genuine exceptions.
         </p>
         <div className="flex flex-wrap gap-3 mt-1">
-          <Button onClick={() => navigate("/briefs")} className="bg-gold text-ink-950 hover:bg-gold-hi gap-1.5">
+          <Button onClick={() => navigate("/briefs")} className="gap-1.5">
             Review procurement plan
             <ArrowRight className="h-4 w-4" />
           </Button>
-          <Button onClick={openCreateBrief} variant="outline" className="border-line gap-1.5">
+          <Button
+            onClick={openCreateBrief}
+            variant="outline"
+            className="gap-1.5 border-navy-line bg-transparent text-navy-text hover:bg-navy-800 hover:text-navy-text"
+          >
             <FilePlus2 className="h-4 w-4" />
             Create buying brief
           </Button>
@@ -60,18 +62,18 @@ export function OverviewPage() {
         <>
           {/* ---- KPIs ------------------------------------------------ */}
           <section aria-label="Key procurement metrics">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <Card><CardContent><Metric label="Shared budget" value={compactInr(pipeline.pool.total_inr)} /></CardContent></Card>
               <Card><CardContent><Metric label="Committed spend" value={inr(committedInr)} /></CardContent></Card>
-              <Card><CardContent><Metric label="Remaining pool" value={inr(pipeline.pool.remaining_inr)} accent="text-gold-hi" /></CardContent></Card>
-              <Card><CardContent><Metric label="Savings recovered" value={inr(pipeline.pool.net_surplus_returned_inr)} accent="text-sage-hi" /></CardContent></Card>
+              <Card><CardContent><Metric label="Remaining pool" value={inr(pipeline.pool.remaining_inr)} accent="text-brand" /></CardContent></Card>
+              <Card><CardContent><Metric label="Savings recovered" value={inr(pipeline.pool.net_surplus_returned_inr)} accent="text-success" /></CardContent></Card>
               <Card><CardContent><Metric label="Active briefs" value={briefs.length} /></CardContent></Card>
               <Card>
                 <CardContent>
                   <Metric
                     label="Human escalations"
                     value={escalatedCount}
-                    accent={escalatedCount === 0 ? "text-sage-hi" : "text-coral-hi"}
+                    accent={escalatedCount === 0 ? "text-success" : "text-danger"}
                   />
                 </CardContent>
               </Card>
@@ -94,7 +96,7 @@ export function OverviewPage() {
               <BudgetIntelligencePanel pipeline={pipeline} />
               <Card>
                 <CardContent>
-                  <h3 className="font-mono text-[11px] uppercase tracking-[0.15em] text-text-dim mb-3">
+                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-3">
                     Spend by brief
                   </h3>
                   <SpendByBriefChart pipeline={pipeline} />
@@ -115,7 +117,7 @@ export function OverviewPage() {
                 <BriefCard key={b.brief.id} summary={b} onOpenDetail={() => navigate("/briefs")} />
               ))}
             </div>
-            <Button variant="outline" className="border-line gap-1.5" onClick={() => navigate("/briefs")}>
+            <Button variant="outline" className="gap-1.5" onClick={() => navigate("/briefs")}>
               View all buying briefs
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>

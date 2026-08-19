@@ -50,12 +50,12 @@ export function BriefDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl bg-ink-950 border-line p-0 gap-0">
-        <SheetHeader className="border-b border-line pr-12">
+      <SheetContent side="right" className="w-full sm:max-w-2xl p-0 gap-0">
+        <SheetHeader className="border-b border-border pr-12">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <SheetTitle className="font-display text-xl text-text-hi truncate">{brief.title}</SheetTitle>
-              <SheetDescription>
+              <SheetTitle className="font-display text-lg text-foreground truncate">{brief.title}</SheetTitle>
+              <SheetDescription className="tabular-nums">
                 Qty {brief.quantity} · cap {inr(brief.max_unit_price_inr)}/unit · ≤{brief.max_delivery_days}d delivery
                 {brief.requires_warranty && " · warranty required"}
               </SheetDescription>
@@ -73,10 +73,10 @@ export function BriefDetailSheet({
             <Separator />
 
             <section aria-labelledby="firewall-h">
-              <h3 id="firewall-h" className="font-display text-base font-semibold text-text-hi mb-1">
+              <h3 id="firewall-h" className="font-display text-base font-semibold text-foreground mb-1">
                 Vendor discovery → trust layer → hard filter
               </h3>
-              <p className="text-sm text-text-mid mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Every listing is sanitized for prompt-injection before the LLM ever sees it, then
                 gated on GSTIN validity, spec, delivery-SLA, and warranty.
               </p>
@@ -90,10 +90,10 @@ export function BriefDetailSheet({
             <Separator />
 
             <section aria-labelledby="score-h">
-              <h3 id="score-h" className="font-display text-base font-semibold text-text-hi mb-1">
+              <h3 id="score-h" className="font-display text-base font-semibold text-foreground mb-1">
                 Weighted sum model
               </h3>
-              <p className="text-sm text-text-mid mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
                 Only firewall survivors are scored: Price 40% · Reliability &amp; Warranty 30% ·
                 Delivery 20% · Returns 10%.
               </p>
@@ -105,14 +105,14 @@ export function BriefDetailSheet({
                 <Separator />
                 <section
                   aria-labelledby="replan-h"
-                  className="rounded-lg border border-gold/30 bg-gold/[0.04] p-4"
+                  className="rounded-lg border border-warning/25 bg-warning-soft p-4"
                 >
-                  <h3 id="replan-h" className="font-display text-base font-semibold text-gold-hi mb-2">
+                  <h3 id="replan-h" className="font-display text-base font-semibold text-warning mb-2">
                     Dynamic re-planning triggered
                   </h3>
                   {result.replan_events.map((ev, i) => (
-                    <p key={i} className="text-sm text-text-mid mb-1">
-                      <span className="text-gold-hi">{ev.trigger}</span> — {ev.note}
+                    <p key={i} className="text-sm text-ink-soft mb-1">
+                      <span className="text-warning font-medium">{ev.trigger}</span> — {ev.note}
                     </p>
                   ))}
                 </section>
@@ -122,11 +122,11 @@ export function BriefDetailSheet({
             <Separator />
 
             <section aria-labelledby="sim-h">
-              <h3 id="sim-h" className="font-display text-base font-semibold text-text-hi mb-1 flex items-center gap-2">
-                <Zap className="h-4 w-4 text-gold-hi" aria-hidden="true" />
+              <h3 id="sim-h" className="font-display text-base font-semibold text-foreground mb-1 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-brand" aria-hidden="true" />
                 Simulate a vendor going out of stock
               </h3>
-              <p className="text-sm text-text-mid mb-3">
+              <p className="text-sm text-muted-foreground mb-3">
                 Knocks out a ranked vendor and re-runs the pipeline, showing the fallback
                 re-planner or an honest escalation.
               </p>
@@ -136,7 +136,7 @@ export function BriefDetailSheet({
                     key={s.vendor.id}
                     variant="outline"
                     size="sm"
-                    className="border-line font-mono text-xs"
+                    className="font-mono text-xs"
                     onClick={() => handleOutage(s.vendor.id, s.vendor.name)}
                   >
                     Knock out #{s.rank} {s.vendor.name}
@@ -145,7 +145,7 @@ export function BriefDetailSheet({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-gold/30 text-gold-hi font-mono text-xs gap-1.5"
+                  className="text-brand font-mono text-xs gap-1.5"
                   onClick={onReset}
                 >
                   <RotateCcw className="h-3 w-3" aria-hidden="true" />
@@ -158,12 +158,12 @@ export function BriefDetailSheet({
 
             <Button
               variant="outline"
-              className="border-line justify-between"
+              className="justify-between"
               onClick={() => navigate(`/audit#${audit_entry.transaction_id}`)}
             >
-              <span className="flex items-center gap-2">
-                <FileText className="h-4 w-4" aria-hidden="true" />
-                View decision receipt — {audit_entry.transaction_id}
+              <span className="flex items-center gap-2 min-w-0">
+                <FileText className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">View decision receipt — {audit_entry.transaction_id}</span>
               </span>
             </Button>
           </div>

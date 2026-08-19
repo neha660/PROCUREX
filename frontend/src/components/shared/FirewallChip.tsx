@@ -4,9 +4,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import type { FirewallChip as FirewallChipData } from "@/lib/firewallChips";
 
 const STYLES: Record<FirewallChipData["status"], { cls: string; Icon: typeof Check }> = {
-  Passed: { cls: "bg-sage/12 text-sage-hi border-sage/30", Icon: Check },
-  Failed: { cls: "bg-coral/12 text-coral-hi border-coral/30", Icon: X },
-  "Needs review": { cls: "bg-gold/12 text-gold-hi border-gold/30", Icon: AlertTriangle },
+  Passed: { cls: "bg-success-soft text-success border-success/20", Icon: Check },
+  Failed: { cls: "bg-danger-soft text-danger border-danger/20", Icon: X },
+  "Needs review": { cls: "bg-warning-soft text-warning border-warning/20", Icon: AlertTriangle },
 };
 
 /** A single deterministic-check result. Never relies on colour alone —

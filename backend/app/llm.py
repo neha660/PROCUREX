@@ -10,11 +10,13 @@ Everything in this file is advisory text. It:
 It NEVER sets AUTHORISED / ESCALATE / REJECT — that is exclusively
 firewall.py + planner.py (the Code Layer).
 
-Uses the Gemini SDK (google-genai) exclusively, matching the project's
-"Gemini-only, no LangChain" stack choice. If GEMINI_API_KEY is not set,
-every function falls back to a deterministic, rule-based stand-in so the
-whole app still runs end-to-end with zero external dependency — useful
-for demos, offline dev, or CI.
+Calls OpenRouter's OpenAI-compatible chat completions endpoint
+(https://openrouter.ai/api/v1/chat/completions), which fronts hundreds of
+models — Gemini, Claude, GPT, Llama, etc. — behind one API key, so swapping
+models is a one-line env var change rather than a new SDK. If
+OPENROUTER_API_KEY is not set, every function falls back to a
+deterministic, rule-based stand-in so the whole app still runs end-to-end
+with zero external dependency — useful for demos, offline dev, or CI.
 """
 from __future__ import annotations
 
@@ -23,36 +25,56 @@ import os
 import re
 from typing import Optional
 
+import httpx
+
 from .schemas import BuyingBrief, ScoredVendor
 
-_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
-
-_client = None
-if _API_KEY:
-    try:
-        from google import genai
-
-        _client = genai.Client(api_key=_API_KEY)
-    except Exception:
-        _client = None  # fall back to mock mode rather than crash the app
+_OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# "~google/gemini-flash-latest" is OpenRouter's self-updating alias — the
+# leading "~" tells it to always resolve to whatever the current Gemini
+# Flash model is, so a mid-hackathon Google release doesn't leave this
+# pointing at a retired version. Any concrete slug works here too, e.g.
+# "anthropic/claude-sonnet-5", "openai/gpt-5", "meta-llama/llama-3.3-70b-instruct".
+# Full catalog + alias list: openrouter.ai/models
+_MODEL = os.getenv("OPENROUTER_MODEL", "~google/gemini-flash-latest")
+_API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
 
 
 def llm_available() -> bool:
-    return _client is not None
+    return bool(_API_KEY)
 
 
-def _call_gemini(prompt: str, *, json_mode: bool = False) -> Optional[str]:
-    if not _client:
+def _call_openrouter(prompt: str, *, json_mode: bool = False) -> Optional[str]:
+    if not _API_KEY:
         return None
     try:
-        config = {"response_mime_type": "application/json"} if json_mode else {}
-        response = _client.models.generate_content(
-            model=_MODEL, contents=prompt, config=config
+        body: dict = {
+            "model": _MODEL,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if json_mode:
+            # OpenRouter's "basic JSON mode" — guarantees valid JSON, same
+            # idea as Gemini's response_mime_type="application/json".
+            body["response_format"] = {"type": "json_object"}
+
+        response = httpx.post(
+            _OPENROUTER_URL,
+            headers={
+                "Authorization": f"Bearer {_API_KEY}",
+                "Content-Type": "application/json",
+                # Optional app-identification headers OpenRouter uses for its
+                # public leaderboards — harmless to send, safe to ignore.
+                "HTTP-Referer": "https://github.com/procurex",
+                "X-Title": "ProcureX",
+            },
+            json=body,
+            timeout=30.0,
         )
-        return (response.text or "").strip()
+        response.raise_for_status()
+        data = response.json()
+        return (data["choices"][0]["message"]["content"] or "").strip()
     except Exception as exc:  # network/quota/model errors — degrade gracefully
-        print(f"[llm] Gemini call failed, falling back to mock: {exc}")
+        print(f"[llm] OpenRouter call failed, falling back to mock: {exc}")
         return None
 
 
@@ -75,7 +97,7 @@ bulk_tier_price_inr (number or null).
 
 Request: \"\"\"{text}\"\"\""""
 
-    raw = _call_gemini(prompt, json_mode=True)
+    raw = _call_openrouter(prompt, json_mode=True)
     if raw:
         try:
             data = json.loads(raw)
@@ -145,7 +167,7 @@ procurement choice for "{brief.title}". It scored {winner.total_score}/100
 delivery {winner.delivery_score}, returns {winner.return_score}). Be concise
 and factual, finance-audience tone. Do not mention you are an AI."""
 
-    text = _call_gemini(prompt)
+    text = _call_openrouter(prompt)
     if text:
         return text
 
@@ -178,7 +200,7 @@ instead of ₹{brief.max_unit_price_inr:,.0f}, vendor "{runner_up.vendor.name}"
 (score {runner_up.total_score}/100) would have ranked #1 instead of "{winner.vendor.name}".
 Mention one concrete spec/delivery advantage. Be concise."""
 
-    text = _call_gemini(prompt)
+    text = _call_openrouter(prompt)
     if text:
         return text
 

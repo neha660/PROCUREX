@@ -37,7 +37,7 @@ export function ApprovalsPage() {
 
       {open.length > 0 && (
         <section aria-labelledby="open-esc-h">
-          <h2 id="open-esc-h" className="font-mono text-[11px] uppercase tracking-wide text-coral-hi mb-3 flex items-center gap-1.5">
+          <h2 id="open-esc-h" className="text-[11px] font-semibold uppercase tracking-wide text-danger mb-3 flex items-center gap-1.5">
             <AlertTriangle className="h-3.5 w-3.5" /> Awaiting your decision ({open.length})
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
@@ -50,7 +50,7 @@ export function ApprovalsPage() {
 
       {resolved.length > 0 && (
         <section aria-labelledby="resolved-esc-h">
-          <h2 id="resolved-esc-h" className="font-mono text-[11px] uppercase tracking-wide text-sage-hi mb-3 flex items-center gap-1.5">
+          <h2 id="resolved-esc-h" className="text-[11px] font-semibold uppercase tracking-wide text-success mb-3 flex items-center gap-1.5">
             <CheckCircle2 className="h-3.5 w-3.5" /> Resolved ({resolved.length})
           </h2>
           <div className="grid md:grid-cols-2 gap-4">
@@ -82,25 +82,25 @@ function EscalationSummaryCard({ card, onOpen }: { card: EscalationCardData; onO
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen())}
-      className={`cursor-pointer ${card.resolved ? "border-sage/30" : "border-coral/30"}`}
+      className={`cursor-pointer ${card.resolved ? "border-success/20" : "border-danger/20"}`}
     >
       <CardContent className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-mono text-[11px] text-text-dim">{card.brief_id}</span>
+          <span className="font-mono text-[11px] text-muted-foreground">{card.brief_id}</span>
           {card.resolved ? (
-            <Badge className="bg-sage/15 text-sage-hi border-sage/30" variant="outline">
+            <Badge className="bg-success-soft text-success border-success/20" variant="outline">
               Resolved
             </Badge>
           ) : (
-            <Badge className="bg-coral/15 text-coral-hi border-coral/30" variant="outline">
+            <Badge className="bg-danger-soft text-danger border-danger/20" variant="outline">
               Open
             </Badge>
           )}
         </div>
-        <p className="text-sm font-medium text-text-hi">{card.reason}</p>
-        <p className="text-xs text-text-mid line-clamp-2">{card.context}</p>
+        <p className="text-sm font-medium text-foreground">{card.reason}</p>
+        <p className="text-xs text-muted-foreground line-clamp-2">{card.context}</p>
         {card.resolved && (
-          <p className="text-xs text-sage-hi mt-1">Resolution: {card.resolution}</p>
+          <p className="text-xs text-success mt-1">Resolution: {card.resolution}</p>
         )}
       </CardContent>
     </Card>

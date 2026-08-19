@@ -26,8 +26,8 @@ export function AuditPage() {
     const el = document.getElementById(location.hash.slice(1));
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
-      el.classList.add("ring-2", "ring-gold");
-      const t = setTimeout(() => el.classList.remove("ring-2", "ring-gold"), 2000);
+      el.classList.add("ring-2", "ring-brand");
+      const t = setTimeout(() => el.classList.remove("ring-2", "ring-brand"), 2000);
       return () => clearTimeout(t);
     }
   }, [location.hash, loading, pipeline]);
@@ -44,7 +44,7 @@ export function AuditPage() {
       {!error && (
         <>
           <div className="relative max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-text-dim" aria-hidden="true" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-ink-faint" aria-hidden="true" />
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}

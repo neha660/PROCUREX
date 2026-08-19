@@ -25,11 +25,11 @@ export function SecurityPage() {
 
       {!error && (
         <>
-          <Card className="border-sage/30 bg-sage/[0.04]">
+          <Card className="border-success/20 bg-success-soft/40">
             <CardContent className="flex items-start gap-3">
-              <ShieldCheck className="h-5 w-5 text-sage-hi shrink-0 mt-0.5" aria-hidden="true" />
-              <p className="text-sm text-text-mid">
-                <strong className="text-sage-hi">Zero authorisation impact this run:</strong> every
+              <ShieldCheck className="h-5 w-5 text-success shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-sm text-ink-soft">
+                <strong className="text-success">Zero authorisation impact this run:</strong> every
                 event below was caught and neutralised by deterministic code before it could reach
                 a purchase decision. The LLM layer only ever reads sanitized text.
               </p>
@@ -49,7 +49,7 @@ export function SecurityPage() {
           <ol className="flex flex-col gap-3" aria-label="Security event timeline">
             {events.map((ev) => (
               <li key={ev.id}>
-                <Card className={ev.severity === "High" ? "border-coral/30" : "border-gold/30"}>
+                <Card className={ev.severity === "High" ? "border-danger/20" : "border-warning/20"}>
                   <CardContent className="flex flex-col gap-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -57,37 +57,37 @@ export function SecurityPage() {
                           variant="outline"
                           className={
                             ev.severity === "High"
-                              ? "border-coral/40 text-coral-hi bg-coral/10"
-                              : "border-gold/40 text-gold-hi bg-gold/10"
+                              ? "border-danger/25 text-danger bg-danger-soft"
+                              : "border-warning/25 text-warning bg-warning-soft"
                           }
                         >
                           {ev.severity} severity
                         </Badge>
-                        <span className="text-sm font-medium text-text-hi">{ev.type}</span>
+                        <span className="text-sm font-medium text-foreground">{ev.type}</span>
                       </div>
-                      <time className="text-xs font-mono text-text-dim" dateTime={ev.timestamp}>
+                      <time className="text-xs font-mono text-muted-foreground" dateTime={ev.timestamp}>
                         {new Date(ev.timestamp).toLocaleString("en-IN")}
                       </time>
                     </div>
-                    <p className="text-sm text-text-mid">
-                      <span className="text-text-hi font-medium">{ev.vendorName}</span> ·{" "}
+                    <p className="text-sm text-ink-soft">
+                      <span className="text-foreground font-medium">{ev.vendorName}</span> ·{" "}
                       {ev.briefTitle.split(" — ").pop()}
                     </p>
-                    <p className="text-sm text-text-mid">{ev.reason}</p>
+                    <p className="text-sm text-ink-soft">{ev.reason}</p>
                     <div className="grid sm:grid-cols-2 gap-2 mt-1 text-xs">
-                      <div className="rounded-md bg-ink-900 border border-line p-2">
-                        <span className="text-text-dim block mb-0.5">Automated action</span>
-                        <span className="text-text-hi">{ev.action}</span>
+                      <div className="rounded-md bg-surface-muted border border-border p-2">
+                        <span className="text-muted-foreground block mb-0.5">Automated action</span>
+                        <span className="text-foreground">{ev.action}</span>
                       </div>
-                      <div className="rounded-md bg-ink-900 border border-line p-2">
-                        <span className="text-text-dim block mb-0.5">Authorisation impact</span>
-                        <span className="text-sage-hi">{ev.authorisationImpact}</span>
+                      <div className="rounded-md bg-surface-muted border border-border p-2">
+                        <span className="text-muted-foreground block mb-0.5">Authorisation impact</span>
+                        <span className="text-success">{ev.authorisationImpact}</span>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="justify-start gap-1.5 text-text-mid -ml-2 w-fit mt-1"
+                      className="justify-start gap-1.5 text-ink-soft -ml-2 w-fit mt-1"
                       onClick={() => navigate(`/audit#${ev.auditRef}`)}
                     >
                       <FileSearch className="h-3.5 w-3.5" />

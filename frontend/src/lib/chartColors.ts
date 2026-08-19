@@ -2,14 +2,16 @@
  * the same hex values as the design tokens in index.css, kept in sync by
  * hand since there are only a handful. */
 export const CHART_COLORS = {
-  gold: "#d9a94e",
-  goldHi: "#f0c777",
-  sage: "#58a679",
-  sageHi: "#7ec99a",
-  coral: "#e2604f",
-  coralHi: "#f08977",
-  textDim: "#7683a3",
-  textMid: "#aab3cc",
-  line: "#2a3454",
-  inkAccent: ["#d9a94e", "#58a679", "#e2604f", "#60a5fa", "#c084fc"],
+  brand: "#0f6e64",
+  money: "#a15c07",
+  success: "#15803d",
+  danger: "#b42318",
+  textFaint: "#8890a0",
+  textSoft: "#4b5468",
+  border: "#e2e5eb",
+  surface: "#ffffff",
+  ink: "#10182b",
+  /** Segment palette for the shared-pool bar / spend-by-brief chart —
+   * ordered so adjacent briefs never land on visually similar hues. */
+  segments: ["#0f6e64", "#a15c07", "#375ba8", "#8f6b3f", "#5b8a72"],
 };

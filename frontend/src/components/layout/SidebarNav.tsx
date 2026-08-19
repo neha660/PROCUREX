@@ -1,7 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { NAV_ITEMS } from "./nav-items";
 import { cn } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ChevronsUpDown } from "lucide-react";
 import {
@@ -17,24 +16,26 @@ interface SidebarNavProps {
 }
 
 /** Shared nav content — rendered inside the fixed desktop rail and inside
- * the mobile Sheet drawer, so behaviour never drifts between breakpoints. */
+ * the mobile Sheet drawer, so behaviour never drifts between breakpoints.
+ * Deliberately dark navy chrome against the light content area — the one
+ * place in the app that isn't white. */
 export function SidebarNav({ badges, onNavigate }: SidebarNavProps) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-navy-950 text-navy-text">
       <div className="px-5 pt-6 pb-5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <div
-            className="h-8 w-8 rounded-lg bg-gold text-ink-950 flex items-center justify-center font-display font-bold text-sm shrink-0"
+            className="h-8 w-8 rounded-md bg-brand flex items-center justify-center font-display font-bold text-sm text-white shrink-0"
             aria-hidden="true"
           >
             Px
           </div>
-          <div>
-            <h1 className="font-display text-lg font-semibold text-text-hi leading-tight">
+          <div className="min-w-0">
+            <h1 className="font-display text-[15px] font-semibold text-navy-text leading-tight truncate">
               ProcureX
             </h1>
-            <p className="text-[10.5px] text-text-dim leading-tight">
-              Autonomous where it can. Accountable where it must.
+            <p className="text-[10.5px] text-navy-text-faint leading-tight truncate">
+              Procurement, under control
             </p>
           </div>
         </div>
@@ -52,22 +53,19 @@ export function SidebarNav({ badges, onNavigate }: SidebarNavProps) {
                   onClick={onNavigate}
                   className={({ isActive }) =>
                     cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                      "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-gold/12 text-gold-hi"
-                        : "text-text-mid hover:bg-ink-800 hover:text-text-hi"
+                        ? "bg-navy-800 text-white"
+                        : "text-navy-text-soft hover:bg-navy-900 hover:text-navy-text"
                     )
                   }
                 >
-                  <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <item.icon className="h-[17px] w-[17px] shrink-0" aria-hidden="true" strokeWidth={1.75} />
                   <span className="flex-1 truncate">{item.label}</span>
                   {!!count && (
-                    <Badge
-                      variant="outline"
-                      className="border-coral/40 bg-coral/15 text-coral-hi text-[10px] px-1.5 h-5 min-w-5 justify-center"
-                    >
+                    <span className="inline-flex items-center justify-center rounded-full bg-danger px-1.5 h-[18px] min-w-[18px] text-[10px] font-semibold text-white tabular-nums">
                       {count}
-                    </Badge>
+                    </span>
                   )}
                 </NavLink>
               </li>
@@ -76,25 +74,25 @@ export function SidebarNav({ badges, onNavigate }: SidebarNavProps) {
         </ul>
       </nav>
 
-      <div className="border-t border-line px-3 py-3 flex flex-col gap-2">
+      <div className="border-t border-navy-line px-3 py-3 flex flex-col gap-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-ink-800 transition-colors w-full"
+              className="flex items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-navy-900 transition-colors w-full"
             >
-              <span className="h-6 w-6 rounded-md bg-ink-700 text-gold-hi flex items-center justify-center text-[11px] font-semibold shrink-0">
+              <span className="h-6 w-6 rounded-md bg-navy-800 text-navy-text-soft flex items-center justify-center text-[11px] font-semibold shrink-0">
                 I26
               </span>
               <span className="flex-1 min-w-0">
-                <span className="block text-sm font-medium text-text-hi truncate">Ignite '26</span>
-                <span className="block text-[10.5px] text-text-dim truncate">Workspace</span>
+                <span className="block text-sm font-medium text-navy-text truncate">Ignite '26</span>
+                <span className="block text-[10.5px] text-navy-text-faint truncate">Workspace</span>
               </span>
-              <ChevronsUpDown className="h-3.5 w-3.5 text-text-dim shrink-0" aria-hidden="true" />
+              <ChevronsUpDown className="h-3.5 w-3.5 text-navy-text-faint shrink-0" aria-hidden="true" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem disabled className="text-sage-hi">
+            <DropdownMenuItem disabled className="text-success">
               ✓ Ignite '26 — active
             </DropdownMenuItem>
             <DropdownMenuItem disabled>+ New workspace (demo-only)</DropdownMenuItem>
@@ -105,14 +103,14 @@ export function SidebarNav({ badges, onNavigate }: SidebarNavProps) {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-ink-800 transition-colors w-full"
+              className="flex items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-navy-900 transition-colors w-full"
             >
               <Avatar className="h-7 w-7 shrink-0">
-                <AvatarFallback className="bg-ink-700 text-text-hi text-[11px]">AN</AvatarFallback>
+                <AvatarFallback className="bg-navy-800 text-navy-text text-[11px]">AN</AvatarFallback>
               </Avatar>
               <span className="flex-1 min-w-0">
-                <span className="block text-sm font-medium text-text-hi truncate">Ananya</span>
-                <span className="block text-[10.5px] text-text-dim truncate">Logistics Coordinator</span>
+                <span className="block text-sm font-medium text-navy-text truncate">Ananya</span>
+                <span className="block text-[10.5px] text-navy-text-faint truncate">Logistics Coordinator</span>
               </span>
             </button>
           </DropdownMenuTrigger>
@@ -123,8 +121,8 @@ export function SidebarNav({ badges, onNavigate }: SidebarNavProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex items-center gap-2 px-2.5 py-1 text-[11px] text-text-dim font-mono">
-          <span className="h-1.5 w-1.5 rounded-full bg-sage animate-pulse-soft shrink-0" aria-hidden="true" />
+        <div className="flex items-center gap-2 px-2.5 pt-2 text-[11px] text-navy-text-faint">
+          <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse-soft shrink-0" aria-hidden="true" />
           All systems operational
         </div>
       </div>

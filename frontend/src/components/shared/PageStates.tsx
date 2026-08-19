@@ -7,7 +7,7 @@ export function CardGridSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="grid md:grid-cols-3 gap-4" aria-hidden="true">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="rounded-xl border border-line bg-ink-850/80 p-5 flex flex-col gap-3">
+        <div key={i} className="rounded-lg border border-border bg-card p-5 flex flex-col gap-3 shadow-sm">
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-3 w-full" />
@@ -20,9 +20,9 @@ export function CardGridSkeleton({ count = 3 }: { count?: number }) {
 
 export function TableSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="rounded-lg border border-line overflow-hidden" aria-hidden="true">
+    <div className="rounded-lg border border-border overflow-hidden bg-card" aria-hidden="true">
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-line last:border-0">
+        <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
           <Skeleton className="h-4 w-32" />
           <Skeleton className="h-4 w-20" />
           <Skeleton className="h-4 w-24" />
@@ -39,18 +39,20 @@ export function ApiErrorState({ message, onRetry }: { message: string; onRetry: 
   return (
     <div
       role="alert"
-      className="rounded-xl border border-coral/30 bg-coral/[0.06] p-6 flex flex-col gap-3 items-start"
+      className="rounded-lg border border-danger/25 bg-danger-soft p-6 flex flex-col gap-3 items-start"
     >
-      <div className="flex items-center gap-2 text-coral-hi">
+      <div className="flex items-center gap-2 text-danger">
         <AlertTriangle className="h-4 w-4" aria-hidden="true" />
         <span className="font-medium text-sm">Couldn't reach the ProcureX API</span>
       </div>
-      <p className="text-xs font-mono text-coral-hi/80 break-all">{message}</p>
-      <p className="text-sm text-text-mid">
-        Make sure the backend is running (<code className="font-mono text-text-hi">uvicorn app.main:app --reload</code>{" "}
-        from <code className="font-mono text-text-hi">backend/</code>), then retry.
+      <p className="text-xs font-mono text-danger/80 break-all">{message}</p>
+      <p className="text-sm text-ink-soft">
+        Make sure the backend is running (
+        <code className="font-mono text-ink bg-surface-muted px-1 py-0.5 rounded">uvicorn app.main:app</code>{" "}
+        from <code className="font-mono text-ink bg-surface-muted px-1 py-0.5 rounded">backend/</code>), then
+        retry.
       </p>
-      <Button variant="outline" size="sm" onClick={onRetry} className="border-line">
+      <Button variant="outline" size="sm" onClick={onRetry}>
         Retry
       </Button>
     </div>
@@ -69,10 +71,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-line p-10 text-center flex flex-col items-center gap-3">
-      {icon && <div className="text-text-dim">{icon}</div>}
-      <h3 className="font-display text-lg font-semibold text-text-hi">{title}</h3>
-      <p className="text-sm text-text-mid max-w-md">{description}</p>
+    <div className="rounded-lg border border-dashed border-border-strong bg-surface p-10 text-center flex flex-col items-center gap-3">
+      {icon && <div className="text-ink-faint">{icon}</div>}
+      <h3 className="font-display text-lg font-semibold text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground max-w-md">{description}</p>
       {action}
     </div>
   );

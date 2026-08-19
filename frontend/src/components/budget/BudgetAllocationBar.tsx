@@ -13,7 +13,7 @@ export function BudgetAllocationBar({ pipeline }: { pipeline: PipelineResult | n
   const { segments, reserveInr, totalInr, committedInr } = computeBudgetSegments(pipeline);
 
   if (!pipeline || totalInr === 0) {
-    return <div className="h-3 w-full rounded-full bg-ink-800 animate-pulse" aria-hidden="true" />;
+    return <div className="h-3 w-full rounded-full bg-surface-muted animate-pulse" aria-hidden="true" />;
   }
 
   const MIN_PCT = 3;
@@ -25,7 +25,7 @@ export function BudgetAllocationBar({ pipeline }: { pipeline: PipelineResult | n
   return (
     <div className="flex flex-col gap-3 w-full">
       <div
-        className="h-3.5 w-full rounded-full bg-ink-800 overflow-hidden flex ring-1 ring-line"
+        className="h-3.5 w-full rounded-full bg-surface-muted overflow-hidden flex ring-1 ring-border"
         role="img"
         aria-label={`Shared pool of ${inr(totalInr)}: ${inr(committedInr)} committed across ${segments.length} briefs, ${inr(
           pipeline.pool.net_surplus_returned_inr
@@ -40,31 +40,31 @@ export function BudgetAllocationBar({ pipeline }: { pipeline: PipelineResult | n
           />
         ))}
         <div
-          className="h-full bg-sage-hi/70 transition-all duration-700"
+          className="h-full bg-success/70 transition-all duration-700"
           style={{ width: `${flexPct(pipeline.pool.net_surplus_returned_inr)}%` }}
           title={`Saved surplus: ${inr(pipeline.pool.net_surplus_returned_inr)}`}
         />
         <div
-          className="h-full bg-ink-600 transition-all duration-700"
+          className="h-full bg-border-strong transition-all duration-700"
           style={{ width: `${flexPct(reserveInr)}%` }}
           title={`Available reserve: ${inr(reserveInr)}`}
         />
       </div>
 
-      <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-text-mid font-mono">
+      <ul className="flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-ink-soft">
         {segments.map((s) => (
-          <li key={s.id} className="flex items-center gap-1.5">
+          <li key={s.id} className="flex items-center gap-1.5 tabular-nums">
             <span className={cn("h-2 w-2 rounded-full shrink-0", s.colorClass)} aria-hidden="true" />
-            {s.label}: <span className="text-text-hi">{inr(s.amountInr)}</span>
+            {s.label}: <span className="text-foreground font-medium">{inr(s.amountInr)}</span>
           </li>
         ))}
-        <li className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full shrink-0 bg-sage-hi/70" aria-hidden="true" />
-          Saved surplus: <span className="text-sage-hi">{inr(pipeline.pool.net_surplus_returned_inr)}</span>
+        <li className="flex items-center gap-1.5 tabular-nums">
+          <span className="h-2 w-2 rounded-full shrink-0 bg-success/70" aria-hidden="true" />
+          Saved surplus: <span className="text-success font-medium">{inr(pipeline.pool.net_surplus_returned_inr)}</span>
         </li>
-        <li className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full shrink-0 bg-ink-600" aria-hidden="true" />
-          Available reserve: <span className="text-text-hi">{inr(reserveInr)}</span>
+        <li className="flex items-center gap-1.5 tabular-nums">
+          <span className="h-2 w-2 rounded-full shrink-0 bg-border-strong" aria-hidden="true" />
+          Available reserve: <span className="text-foreground font-medium">{inr(reserveInr)}</span>
         </li>
       </ul>
     </div>

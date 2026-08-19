@@ -32,7 +32,7 @@ export const MOCK_SETTINGS = {
   ],
   integrations: [
     { id: "erp", name: "ERP export (CSV/JSON)", status: "Connected" },
-    { id: "gemini", name: "Gemini LLM layer", status: "Depends on GEMINI_API_KEY" },
+    { id: "openrouter", name: "OpenRouter LLM layer", status: "Depends on OPENROUTER_API_KEY" },
     { id: "gstin", name: "GSTIN trust layer", status: "Connected" },
   ],
 };

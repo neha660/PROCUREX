@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dotenv import load_dotenv
 
-load_dotenv()  # picks up GEMINI_API_KEY / GEMINI_MODEL from backend/.env if present
+load_dotenv()  # picks up OPENROUTER_API_KEY / OPENROUTER_MODEL from backend/.env if present
 
 from typing import Optional
 

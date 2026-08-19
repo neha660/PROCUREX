@@ -38,19 +38,19 @@ export function TopBar({
   const openEscalations = escalations.filter((e) => !e.resolved);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-ink-950/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 border-b border-border bg-surface/95 backdrop-blur-sm">
       <div className="flex items-center gap-3 px-4 md:px-6 h-16">
         <Sheet open={mobileNavOpen} onOpenChange={onMobileNavOpenChange}>
           <Button
             variant="outline"
             size="icon"
-            className="lg:hidden border-line"
+            className="lg:hidden"
             aria-label="Open navigation menu"
             onClick={() => onMobileNavOpenChange(true)}
           >
             <Menu className="h-4 w-4" />
           </Button>
-          <SheetContent side="left" className="w-72 bg-ink-950 p-0 border-line">
+          <SheetContent side="left" className="w-72 bg-navy-950 p-0 border-navy-line">
             <VisuallyHidden>
               <SheetTitle>Navigation</SheetTitle>
             </VisuallyHidden>
@@ -58,19 +58,19 @@ export function TopBar({
           </SheetContent>
         </Sheet>
 
-        <div className="hidden md:flex items-center gap-2 text-sm">
-          <span className="text-text-dim">Workspace</span>
-          <span className="font-medium text-text-hi">Ignite '26</span>
+        <div className="hidden md:flex items-center gap-2 text-sm shrink-0">
+          <span className="text-muted-foreground">Workspace</span>
+          <span className="font-medium text-foreground">Ignite '26</span>
         </div>
 
         <button
           type="button"
           onClick={onOpenCommandMenu}
-          className="flex-1 min-w-0 max-w-md flex items-center gap-2 rounded-lg border border-line bg-ink-900/60 px-3 py-2 text-sm text-text-dim hover:border-ink-600 transition-colors"
+          className="flex-1 min-w-0 max-w-md flex items-center gap-2 rounded-md border border-border bg-surface-muted/60 px-3 py-2 text-sm text-muted-foreground hover:border-border-strong hover:bg-surface-muted transition-colors"
         >
           <Search className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span className="truncate">Search briefs, vendors, receipts…</span>
-          <kbd className="ml-auto hidden sm:inline-block text-[10px] font-mono border border-line rounded px-1.5 py-0.5 text-text-dim">
+          <kbd className="ml-auto hidden sm:inline-block text-[10px] font-mono border border-border-strong rounded px-1.5 py-0.5 text-ink-faint bg-surface">
             ⌘K
           </kbd>
         </button>
@@ -78,7 +78,7 @@ export function TopBar({
         <Button
           variant="outline"
           size="icon"
-          className="border-line hidden sm:inline-flex"
+          className="hidden sm:inline-flex"
           aria-label="Re-run pipeline"
           title="Re-run pipeline"
           onClick={onReload}
@@ -89,10 +89,10 @@ export function TopBar({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="relative border-line" aria-label="Notifications">
+            <Button variant="outline" size="icon" className="relative" aria-label="Notifications">
               <Bell className="h-4 w-4" />
               {openEscalations.length > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-coral text-[10px] font-bold text-ink-950 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-danger text-[10px] font-bold text-white flex items-center justify-center">
                   {openEscalations.length}
                 </span>
               )}
@@ -102,13 +102,13 @@ export function TopBar({
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {openEscalations.length === 0 ? (
-              <div className="px-2 py-3 text-sm text-text-dim">
+              <div className="px-2 py-3 text-sm text-muted-foreground">
                 No open escalations. You're all caught up.
               </div>
             ) : (
               openEscalations.map((e) => (
                 <DropdownMenuItem key={e.id} className="flex flex-col items-start gap-0.5 py-2">
-                  <span className="text-xs font-mono text-coral-hi">{e.brief_id}</span>
+                  <span className="text-xs font-mono text-danger">{e.brief_id}</span>
                   <span className="text-sm">{e.reason}</span>
                 </DropdownMenuItem>
               ))
@@ -116,28 +116,19 @@ export function TopBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button
-          onClick={onNewBrief}
-          size="sm"
-          className="bg-gold text-ink-950 hover:bg-gold-hi gap-1.5 hidden sm:inline-flex"
-        >
+        <Button onClick={onNewBrief} size="sm" className="gap-1.5 hidden sm:inline-flex">
           <Plus className="h-4 w-4" />
           New procurement brief
         </Button>
-        <Button
-          onClick={onNewBrief}
-          size="icon"
-          className="bg-gold text-ink-950 hover:bg-gold-hi sm:hidden"
-          aria-label="New procurement brief"
-        >
+        <Button onClick={onNewBrief} size="icon" className="sm:hidden" aria-label="New procurement brief">
           <Plus className="h-4 w-4" />
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button type="button" aria-label="User menu" className="rounded-full">
+            <button type="button" aria-label="User menu" className="rounded-full shrink-0">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-ink-700 text-text-hi text-xs">AN</AvatarFallback>
+                <AvatarFallback className="bg-navy-950 text-navy-text text-xs">AN</AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>

@@ -2,13 +2,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SectionTitle } from "@/components/shared/Primitives";
 import { inr } from "@/lib/api";
 import { computeBudgetIntelligence } from "@/lib/budget";
+import { cn } from "@/lib/utils";
 import type { PipelineResult } from "@/lib/types";
 import { TrendingUp, ArrowRight, PiggyBank, CheckCircle2, AlertCircle } from "lucide-react";
 
 /**
- * "Budget intelligence" — the reallocation story, told as a flow instead
- * of a wall of text. Every number is pulled live from this run's pool +
- * brief results, not hardcoded to the Ignite '26 example.
+ * "Budget intelligence" — the reallocation story, told as a vertical
+ * timeline rather than side-by-side boxes, so it stays readable however
+ * narrow its column gets (this card shares a row with the spend chart on
+ * desktop). Every number is pulled live from this run's pool + brief
+ * results, not hardcoded to the Ignite '26 example.
  */
 export function BudgetIntelligencePanel({ pipeline }: { pipeline: PipelineResult | null }) {
   const intel = computeBudgetIntelligence(pipeline);
@@ -35,32 +38,37 @@ export function BudgetIntelligencePanel({ pipeline }: { pipeline: PipelineResult
       icon: TrendingUp,
       label: `${overageNames} overage`,
       value: `+${inr(intel.totalOverage)}`,
-      tone: "coral" as const,
+      tone: "danger" as const,
     },
     {
       icon: PiggyBank,
       label: `${savingsNames} bulk-tier savings`,
       value: inr(intel.totalSavings),
-      tone: "gold" as const,
+      tone: "money" as const,
     },
     {
       icon: ArrowRight,
       label: "Reallocated to cover overage",
       value: inr(intel.drawn),
-      tone: "gold" as const,
+      tone: "money" as const,
     },
     {
       icon: intel.allResolved ? CheckCircle2 : AlertCircle,
       label: intel.allResolved ? "Purchase proceeds — no escalation" : "Gap remains — escalated",
       value: intel.netSurplusReturned > 0 ? `${inr(intel.netSurplusReturned)} surplus preserved` : "",
-      tone: intel.allResolved ? ("sage" as const) : ("coral" as const),
+      tone: intel.allResolved ? ("success" as const) : ("danger" as const),
     },
   ];
 
-  const toneCls = {
-    coral: "border-coral/30 bg-coral/[0.06] text-coral-hi",
-    gold: "border-gold/30 bg-gold/[0.06] text-gold-hi",
-    sage: "border-sage/30 bg-sage/[0.06] text-sage-hi",
+  const iconCls = {
+    danger: "bg-danger-soft border-danger/20 text-danger",
+    money: "bg-money-soft border-money/20 text-money",
+    success: "bg-success-soft border-success/20 text-success",
+  };
+  const valueCls = {
+    danger: "text-danger",
+    money: "text-money",
+    success: "text-success",
   };
 
   return (
@@ -71,23 +79,29 @@ export function BudgetIntelligencePanel({ pipeline }: { pipeline: PipelineResult
           title="How the shared pool auto-resolved this run"
           sub={`${overageNames} exceeded its unit cap; ProcureX recovered savings via ${savingsNames}'s bulk tier, covered the gap, and preserved the remainder as surplus — before any human was asked.`}
         />
-        <ol className="flex flex-col md:flex-row items-stretch md:items-center gap-2" aria-label="Budget reallocation flow">
+        <ol aria-label="Budget reallocation flow">
           {steps.map((step, i) => (
-            <li key={step.label} className="flex items-center gap-2 flex-1 min-w-0">
+            <li key={step.label} className="relative flex gap-3 pb-5 last:pb-0">
+              {i < steps.length - 1 && (
+                <span className="absolute left-4 top-9 bottom-0 w-px bg-border" aria-hidden="true" />
+              )}
               <div
-                className={`rounded-lg border p-3 flex flex-col gap-1 flex-1 min-w-0 animate-gate-pass ${toneCls[step.tone]}`}
+                className={cn(
+                  "relative z-10 h-8 w-8 rounded-full border flex items-center justify-center shrink-0 animate-gate-pass",
+                  iconCls[step.tone]
+                )}
                 style={{ animationDelay: `${i * 90}ms` }}
               >
                 <step.icon className="h-4 w-4" aria-hidden="true" />
-                <span className="text-xs font-medium leading-snug">{step.label}</span>
-                {step.value && <span className="font-display font-semibold text-sm">{step.value}</span>}
               </div>
-              {i < steps.length - 1 && (
-                <ArrowRight
-                  className="h-4 w-4 text-text-dim shrink-0 hidden md:block"
-                  aria-hidden="true"
-                />
-              )}
+              <div className="flex-1 min-w-0 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 pt-1.5">
+                <span className="text-sm font-medium text-foreground">{step.label}</span>
+                {step.value && (
+                  <span className={cn("font-display font-semibold text-sm tabular-nums shrink-0", valueCls[step.tone])}>
+                    {step.value}
+                  </span>
+                )}
+              </div>
             </li>
           ))}
         </ol>
