@@ -70,6 +70,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ text, requested_by: requestedBy, cost_center: costCenter }),
     }),
+  // Lightweight reuse of /api/parse-brief purely for its proposed
+  // `category` — avoids a second LLM round-trip just to guess a
+  // category while the person is still typing their request.
+  guessCategory: (text) =>
+    request("/api/parse-brief", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    }),
   submitBrief: (text, { requestedBy, forceUnapprovedCostCenter, category } = {}) =>
     request("/api/submit-brief", {
       method: "POST",

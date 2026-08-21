@@ -100,11 +100,26 @@ export default function AuditReceipt({ entry }) {
           {entry.security_events?.length > 0 && (
             <div>
               <div className="text-[11px] text-danger-600">Security events</div>
-              {entry.security_events.map((ev, i) => (
-                <p key={i} className="mt-1 break-words text-sm leading-relaxed text-danger-700">
-                  {ev}
-                </p>
-              ))}
+              {entry.security_events.map((ev, i) => {
+                // Two independent detection layers write into the same
+                // list — the regex sanitizer ("[Pattern-matched]", code
+                // decides) and the semantic manipulation check
+                // ("[AI-flagged]", LLM proposes/advisory-only). Same
+                // dual-signal tag language used everywhere else in the
+                // app so that split stays visible here too.
+                const aiFlagged = ev.startsWith("[AI-flagged]");
+                const patternMatched = ev.startsWith("[Pattern-matched]");
+                const label = ev.replace(/^\[(AI-flagged|Pattern-matched)\]\s*/, "");
+                return (
+                  <div key={i} className="mt-1.5 flex items-start gap-2">
+                    {aiFlagged && <AiTag>AI-flagged</AiTag>}
+                    {patternMatched && <CodeTag>Pattern-matched</CodeTag>}
+                    <p className="min-w-0 break-words text-sm leading-relaxed text-danger-700">
+                      {label}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           )}
 

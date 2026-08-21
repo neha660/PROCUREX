@@ -7,7 +7,14 @@ it only writes human-readable reasoning *about* a decision this module
 already made deterministically.
 
 Order of operations mirrors the deck exactly:
-  1. Sanitize untrusted vendor text (sanitizer.py)
+  1. Sanitize untrusted vendor text (sanitizer.py) — regex-based,
+     catches literal injection syntax
+  1b. Semantic manipulation check (llm.py) — a second, independent
+     layer over the SAME raw text, catching rephrased attempts the
+     regex above would miss. Purely advisory: it can only ever add a
+     security_events entry (prefixed "[AI-flagged]", vs. the regex
+     layer's "[Pattern-matched]") — it can never touch reasons/passed
+     below, by construction (see llm.assess_manipulation_risk).
   2. Vendor Trust Layer — GSTIN structural/checksum + MSME flag (gstin.py)
   3. Stage 1 hard filter — price, spec, delivery SLA, warranty
 A vendor failing step 2 never reaches step 3 ("never reaches the vendor
@@ -18,6 +25,7 @@ from __future__ import annotations
 from .schemas import BuyingBrief, Vendor, FirewallResult, VendorExclusionReason
 from .gstin import validate_gstin
 from .sanitizer import sanitize_vendor_text
+from .llm import assess_manipulation_risk
 
 
 def run_trust_and_firewall(
@@ -54,8 +62,22 @@ def run_trust_and_firewall(
     sanitized = sanitize_vendor_text(vendor.raw_listing_text)
     if sanitized.injection_detected:
         security_events.append(
-            f"Prompt-injection attempt stripped from vendor '{vendor.name}' "
-            f"listing: {sanitized.stripped_fragments}"
+            f"[Pattern-matched] Prompt-injection attempt stripped from vendor "
+            f"'{vendor.name}' listing: {sanitized.stripped_fragments}"
+        )
+
+    # Step 1b — independent, purely-advisory AI layer over the SAME raw
+    # text: semantically judges intent instead of matching literal
+    # syntax, so it can catch a manipulation attempt phrased with no
+    # brackets and no exact regex match at all. This can only ever
+    # append to security_events below — nothing here can reach `reasons`
+    # or `passed`, by construction (see llm.assess_manipulation_risk's
+    # docstring for why that boundary matters).
+    manipulation = assess_manipulation_risk(vendor.name, vendor.raw_listing_text)
+    if manipulation["flagged"]:
+        security_events.append(
+            f"[AI-flagged] Possible manipulation attempt in vendor "
+            f"'{vendor.name}' listing: {manipulation['reasoning']}"
         )
 
     # Step 2 — vendor trust layer gate (runs BEFORE scoring eligibility)

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   LayoutGrid,
   FileText,
@@ -1044,10 +1044,59 @@ function TryBriefTab({ onSubmitted }) {
   const [text, setText] = useState("Need 20 wireless mice, budget ₹500 per unit, delivery within 5 days");
   const [requestedBy, setRequestedBy] = useState("");
   const [category, setCategory] = useState("");
+  // Tracks whether the current category value is still the LLM's own
+  // proposal (never touched by the person) vs. something they picked —
+  // used both to show the "LLM proposed" tag and to make sure a later
+  // guess never silently overwrites a manual choice.
+  const [categoryIsLlmGuess, setCategoryIsLlmGuess] = useState(false);
+  const [guessingCategory, setGuessingCategory] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [testPersonal, setTestPersonal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
+
+  // Read via a ref inside the debounce timer below so a manual pick made
+  // while a guess is in flight is always respected, regardless of when
+  // the effect that scheduled it last ran.
+  const categoryStateRef = useRef({ value: category, isLlmGuess: categoryIsLlmGuess });
+  useEffect(() => {
+    categoryStateRef.current = { value: category, isLlmGuess: categoryIsLlmGuess };
+  }, [category, categoryIsLlmGuess]);
+
+  // Category auto-guess: ~500ms after the person stops typing a
+  // long-enough request, ask the LLM layer (via /api/parse-brief, which
+  // already proposes a category — no separate LLM call needed) and
+  // pre-fill the dropdown with its guess. Only ever fills a category the
+  // person hasn't already chosen for themselves, and a failed/empty
+  // guess leaves the field exactly as it was — still blank and required
+  // if it was blank.
+  useEffect(() => {
+    const trimmed = text.trim();
+    if (trimmed.length < 8) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      if (categoryStateRef.current.value && !categoryStateRef.current.isLlmGuess) return;
+      setGuessingCategory(true);
+      try {
+        const draft = await api.guessCategory(trimmed);
+        const stillFree = !categoryStateRef.current.value || categoryStateRef.current.isLlmGuess;
+        if (!cancelled && draft?.category && stillFree) {
+          setCategory(draft.category);
+          setCategoryIsLlmGuess(true);
+        }
+      } catch {
+        // Silent — a failed guess just leaves the field as-is.
+      } finally {
+        if (!cancelled) setGuessingCategory(false);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [text]);
 
   const canSubmit = !!text.trim() && !!requestedBy.trim() && !!category;
 
@@ -1077,25 +1126,40 @@ function TryBriefTab({ onSubmitted }) {
         sub="The LLM only ever drafts a proposal — the same Pydantic schema the rest of the pipeline trusts still validates it. Name and category are required so every request is traceable to a person, even one that never gets past the firewall — submit and you'll land on it in the Briefs tab, evaluated for real."
       />
       <Card className="p-5">
-        <div className="mb-3 grid grid-cols-2 gap-2">
+        <div className="mb-3 grid grid-cols-2 items-start gap-2">
           <input
             value={requestedBy}
             onChange={(e) => setRequestedBy(e.target.value)}
             placeholder="Your name (required)"
             className="rounded-lg border border-border-strong px-3 py-2 text-sm outline-none focus:border-brand-500"
           />
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="rounded-lg border border-border-strong px-3 py-2 text-sm outline-none focus:border-brand-500"
-          >
-            <option value="">Category (required)…</option>
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-col gap-1">
+            <select
+              value={category}
+              onChange={(e) => {
+                setCategory(e.target.value);
+                // A direct pick always wins from here on — the debounced
+                // guesser will never overwrite it again.
+                setCategoryIsLlmGuess(false);
+              }}
+              className="rounded-lg border border-border-strong px-3 py-2 text-sm outline-none focus:border-brand-500"
+            >
+              <option value="">Category (required)…</option>
+              {CATEGORY_OPTIONS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+            {guessingCategory && (
+              <span className="px-0.5 text-[11px] text-text-dim">Guessing category…</span>
+            )}
+            {!guessingCategory && category && categoryIsLlmGuess && (
+              <div className="px-0.5">
+                <AiTag>LLM proposed — editable</AiTag>
+              </div>
+            )}
+          </div>
         </div>
         <textarea
           value={text}
