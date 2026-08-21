@@ -11,13 +11,21 @@ legitimacy are different questions, and the deck's own architecture
 already treats each pipeline stage as a distinct, separately-testable
 gate.
 
-Design choice: an unapproved or missing cost-center never silently
+Design choice: an unapproved or missing cost-center — or a category that
+doesn't belong under an otherwise-valid cost center — never silently
 blocks the brief (REJECTED) and never silently lets it through
 (AUTO_APPROVED) — it always routes to a human Finance Manager. A
 brand-new legitimate cost-center (a real new project) and someone
 gaming the system both look identical to the code at this point; only
 a person can tell them apart. The code's job is only to guarantee the
 question always gets asked.
+
+The category check below is the second half of that same question: a
+valid, approved cost-center code alone isn't proof the *item* actually
+belongs to that budget line — e.g. "1 gaming laptop" tagged under the
+Marketing & Swag cost center. brief.category is an LLM proposal
+(llm.py); this file is what actually decides whether it's plausible for
+the declared cost center.
 """
 from __future__ import annotations
 
@@ -33,7 +41,7 @@ class GovernanceResult:
 def check_business_justification(
     brief: BuyingBrief, approved_cost_centers: list[CostCenter]
 ) -> GovernanceResult:
-    active_codes = {c.code for c in approved_cost_centers if c.active}
+    active_centers = {c.code: c for c in approved_cost_centers if c.active}
 
     if not brief.requested_by or brief.requested_by.strip().lower() in ("", "unknown requester"):
         return GovernanceResult(
@@ -41,12 +49,22 @@ def check_business_justification(
             reason="No requester identified on this brief — every purchase must be attributable to a person.",
         )
 
-    if brief.cost_center not in active_codes:
+    if brief.cost_center not in active_centers:
         return GovernanceResult(
             passed=False,
             reason=(
                 f"Cost center '{brief.cost_center}' is not on the approved list — "
                 "this brief isn't tied to a recognised company budget line."
+            ),
+        )
+
+    cost_center = active_centers[brief.cost_center]
+    if brief.category not in cost_center.allowed_categories:
+        return GovernanceResult(
+            passed=False,
+            reason=(
+                f"This cost center doesn't cover '{brief.category}' purchases — "
+                "flagged in case the item doesn't actually belong to this budget line."
             ),
         )
 

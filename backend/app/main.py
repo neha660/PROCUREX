@@ -16,13 +16,15 @@ from dotenv import load_dotenv
 
 load_dotenv()  # picks up OPENROUTER_API_KEY / OPENROUTER_MODEL from backend/.env if present
 
+from typing import Optional
+
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from . import audit, planner, vendor_data
 from .llm import llm_available, parse_brief_nl
-from .schemas import BuyingBrief, CostCenter, FinanceManagerRecord, Role, role_at_least
+from .schemas import BRIEF_CATEGORIES, BuyingBrief, CostCenter, FinanceManagerRecord, Role, role_at_least
 
 app = FastAPI(title="ProcureX API", version="1.0.0")
 
@@ -147,6 +149,18 @@ def simulate_personal_purchase():
     return planner.run_full_pipeline()
 
 
+@app.post("/api/simulate/category-mismatch")
+def simulate_category_mismatch():
+    """Injects a brief tied to a VALID, approved cost center but whose
+    category doesn't belong under it (e.g. a gaming laptop charged to the
+    Marketing & Swag budget) and re-runs the pipeline, so the dashboard
+    can demo the category half of the Business Justification Gate live:
+    an approved cost-center code alone isn't enough — it's held for a
+    Finance Manager instead of silently auto-approved."""
+    vendor_data.inject_category_mismatch_brief()
+    return planner.run_full_pipeline()
+
+
 class SimulateMalformedVendorRequest(BaseModel):
     brief_id: str = "BRIEF-1-AI-ARENA"
 
@@ -180,6 +194,66 @@ def parse_brief(body: ParseBriefRequest):
     except Exception as exc:
         raise HTTPException(422, f"LLM draft failed validation: {exc}")
     return validated.model_dump()
+
+
+class SubmitBriefRequest(BaseModel):
+    text: str
+    # Required, not defaulted: a purchase with no attributable requester
+    # or no declared category is exactly the "unidentified purchase" this
+    # app exists to prevent — better to ask for both up front than to
+    # paper over a missing one with a fake "Demo user" identity that
+    # can't actually be traced back to anyone.
+    requested_by: str
+    category: str
+    # Optional — the shared budget line still defaults sensibly to the
+    # first approved cost center, since that's not an accountability gap
+    # the way a missing name or category would be.
+    cost_center: Optional[str] = None
+    # Advanced/optional: forces an unapproved cost center regardless of
+    # cost_center above, so the personal-purchase-prevention gate (Slide
+    # 9's Business Justification Gate) can be demoed on demand without
+    # making every submission jump through it.
+    force_unapproved_cost_center: bool = False
+
+
+@app.post("/api/submit-brief")
+def submit_brief(body: SubmitBriefRequest):
+    """The whole "Try a Brief" flow in one call: the LLM Layer parses free
+    text into a draft (parse_brief_nl), Pydantic validates it as a real
+    BuyingBrief (BuyingBrief(**draft) — the LLM proposes, code decides),
+    it's injected into the live scenario the same way the other live-demo
+    endpoints inject briefs, and the full pipeline re-runs so the caller
+    gets back a real firewall/scoring/authorisation outcome — not a JSON
+    dead end.
+
+    requested_by and category are required here (not defaulted) so every
+    submitted brief is traceable to a real person and a real declared
+    category, even one that never gets past the firewall."""
+    if not body.requested_by or not body.requested_by.strip():
+        raise HTTPException(422, "A requester name is required so every purchase can be traced back to a person.")
+    if body.category not in BRIEF_CATEGORIES:
+        raise HTTPException(422, f"category must be one of {list(BRIEF_CATEGORIES)}.")
+
+    draft = parse_brief_nl(body.text, brief_id="BRIEF-DRAFT")
+    draft["requested_by"] = body.requested_by.strip()
+    draft["category"] = body.category
+
+    if body.force_unapproved_cost_center:
+        draft["cost_center"] = "PERSONAL-UNLISTED"
+    elif body.cost_center:
+        draft["cost_center"] = body.cost_center
+    else:
+        default_cc = next((c.code for c in vendor_data.COST_CENTERS if c.active), "UNSPECIFIED")
+        draft["cost_center"] = default_cc
+
+    try:
+        validated = BuyingBrief(**draft)
+    except Exception as exc:
+        raise HTTPException(422, f"LLM draft failed validation: {exc}")
+
+    injected = vendor_data.inject_user_submitted_brief(validated)
+    pipeline = planner.run_full_pipeline()
+    return {"brief_id": injected.id, "pipeline": pipeline}
 
 
 # ---------------------------------------------------------------------

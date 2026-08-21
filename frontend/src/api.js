@@ -57,6 +57,8 @@ export const api = {
     }),
   simulatePersonalPurchase: () =>
     request("/api/simulate/personal-purchase", { method: "POST" }),
+  simulateCategoryMismatch: () =>
+    request("/api/simulate/category-mismatch", { method: "POST" }),
   simulateMalformedVendor: (briefId) =>
     request("/api/simulate/malformed-vendor", {
       method: "POST",
@@ -67,6 +69,16 @@ export const api = {
     request("/api/parse-brief", {
       method: "POST",
       body: JSON.stringify({ text, requested_by: requestedBy, cost_center: costCenter }),
+    }),
+  submitBrief: (text, { requestedBy, forceUnapprovedCostCenter, category } = {}) =>
+    request("/api/submit-brief", {
+      method: "POST",
+      body: JSON.stringify({
+        text,
+        requested_by: requestedBy || undefined,
+        force_unapproved_cost_center: !!forceUnapprovedCostCenter,
+        category: category || undefined,
+      }),
     }),
   listCostCenters: () => request("/api/admin/cost-centers"),
   addCostCenter: (code, label) =>

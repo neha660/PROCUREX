@@ -14,6 +14,8 @@ import {
   Users,
   Wallet,
   Lock as LockIcon,
+  Store,
+  Check,
 } from "lucide-react";
 import { api, inr, setRole, getRole } from "./api";
 import PoolGauge from "./components/PoolGauge";
@@ -40,11 +42,22 @@ const ROLES = [
   { id: "ADMIN", label: "Admin" },
 ];
 
+// Mirrors backend/app/schemas.py BRIEF_CATEGORIES — the small fixed set
+// the LLM proposes a category from and governance.py checks against a
+// cost center's allowed_categories.
+const CATEGORY_OPTIONS = [
+  { id: "hardware_equipment", label: "Hardware & equipment" },
+  { id: "stage_av", label: "Stage & AV" },
+  { id: "print_swag_marketing", label: "Print, swag & marketing" },
+  { id: "other", label: "Other" },
+];
+
 function navFor(role) {
   const base = [
     { id: "Home", icon: HomeIcon },
     { id: "Dashboard", icon: LayoutGrid },
     { id: "Briefs", icon: FileText },
+    { id: "Vendors", icon: Store },
     { id: "Audit Trail", icon: ShieldCheck },
     { id: "Escalations", icon: AlertTriangle },
     { id: "Try a Brief", icon: Sparkles },
@@ -187,6 +200,11 @@ export default function App() {
                   await load();
                   setTab("Escalations");
                 }}
+                onCategoryMismatch={async () => {
+                  await api.simulateCategoryMismatch();
+                  await load();
+                  setTab("Escalations");
+                }}
                 onMalformed={async (briefId) => {
                   await api.simulateMalformedVendor(briefId);
                   await load();
@@ -197,12 +215,21 @@ export default function App() {
                 }}
               />
             )}
+            {pipeline && tab === "Vendors" && <VendorsTab pipeline={pipeline} />}
             {pipeline && tab === "Audit Trail" && <AuditTrail pipeline={pipeline} />}
             {pipeline && tab === "Escalations" && (
               <EscalationsTab pipeline={pipeline} onResolve={resolveEscalation} role={role} />
             )}
             {tab === "Admin" && role === "ADMIN" && <AdminTab />}
-            {tab === "Try a Brief" && <TryBriefTab />}
+            {tab === "Try a Brief" && (
+              <TryBriefTab
+                onSubmitted={(newPipeline, briefId) => {
+                  setPipeline(newPipeline);
+                  setSelectedBriefId(briefId);
+                  setTab("Briefs");
+                }}
+              />
+            )}
           </div>
         </main>
       </div>
@@ -493,7 +520,17 @@ function Dashboard({ pipeline }) {
   );
 }
 
-function BriefsTab({ pipeline, selectedBriefId, setSelectedBriefId, onOutage, onDuplicate, onPersonal, onMalformed, onReset }) {
+function BriefsTab({
+  pipeline,
+  selectedBriefId,
+  setSelectedBriefId,
+  onOutage,
+  onDuplicate,
+  onPersonal,
+  onCategoryMismatch,
+  onMalformed,
+  onReset,
+}) {
   const active = pipeline.briefs.find((b) => b.brief.id === selectedBriefId) || pipeline.briefs[0];
   const blocked = !!active.result.governance_reason;
 
@@ -503,6 +540,7 @@ function BriefsTab({ pipeline, selectedBriefId, setSelectedBriefId, onOutage, on
         {pipeline.briefs.map(({ brief, audit_entry }) => {
           const isDuplicate = brief.id.includes("-DUP-");
           const isPersonal = brief.id.includes("PERSONAL");
+          const isCategoryMismatch = brief.id.includes("CATMISMATCH");
           return (
             <button
               key={brief.id}
@@ -517,6 +555,7 @@ function BriefsTab({ pipeline, selectedBriefId, setSelectedBriefId, onOutage, on
                 {brief.title}
                 {isDuplicate && <span className="text-text-dim"> (duplicate submission)</span>}
                 {isPersonal && <span className="text-text-dim"> (unapproved cost center)</span>}
+                {isCategoryMismatch && <span className="text-text-dim"> (category/cost-center mismatch)</span>}
               </span>
               <StatusPill status={audit_entry.authorisation_status} />
             </button>
@@ -535,7 +574,7 @@ function BriefsTab({ pipeline, selectedBriefId, setSelectedBriefId, onOutage, on
             title="Held before vendor discovery"
             sub={active.result.governance_reason}
           />
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
               <div className="text-[11px] text-text-dim">Requested by</div>
               <div className="text-text-hi">{active.brief.requested_by}</div>
@@ -543,6 +582,10 @@ function BriefsTab({ pipeline, selectedBriefId, setSelectedBriefId, onOutage, on
             <div>
               <div className="text-[11px] text-text-dim">Cost center</div>
               <div className="font-mono text-text-hi">{active.brief.cost_center}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-text-dim">Category</div>
+              <div className="font-mono text-text-hi">{active.brief.category}</div>
             </div>
           </div>
         </Card>
@@ -632,6 +675,22 @@ function BriefsTab({ pipeline, selectedBriefId, setSelectedBriefId, onOutage, on
       <Card className="p-6">
         <SectionTitle
           eyebrow="Live demo"
+          title="Simulate a category/cost-center mismatch"
+          sub="A brief tagged with a valid, approved cost center — but for a category that budget line doesn't actually cover. An approved code alone isn't proof the item belongs there, however clean the vendor match looks."
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={onCategoryMismatch}>
+            Submit a laptop request under the Swag budget
+          </Button>
+          <Button variant="ghost" onClick={onReset}>
+            Reset demo state
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <SectionTitle
+          eyebrow="Live demo"
           title="Simulate a malformed vendor listing"
           sub="A scraped listing with no description and no named source — excluded outright with a distinct data-quality reason, not silently treated as a pass just because nothing explicit failed."
         />
@@ -644,6 +703,147 @@ function BriefsTab({ pipeline, selectedBriefId, setSelectedBriefId, onOutage, on
           </Button>
         </div>
       </Card>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* VENDORS — every vendor across every brief, flattened into one table. */
+/* Purely additive: joins firewall_results + gstin_checks + vendors,    */
+/* the same three fields FirewallGate.jsx already reads per-brief, just */
+/* across all briefs at once instead of one card-grid per brief.        */
+/* ------------------------------------------------------------------ */
+function VendorsTab({ pipeline }) {
+  const [briefFilter, setBriefFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const rows = [];
+  for (const { brief, result } of pipeline.briefs) {
+    const gstinById = Object.fromEntries((result.gstin_checks || []).map((g) => [g.gstin, g]));
+    for (const fw of result.firewall_results || []) {
+      const vendor = result.vendors?.[fw.vendor_id];
+      if (!vendor) continue;
+      rows.push({
+        key: `${brief.id}-${fw.vendor_id}`,
+        briefId: brief.id,
+        briefTitle: brief.title,
+        vendor,
+        passed: fw.passed,
+        reasonsFailed: fw.reasons_failed || [],
+        gstin: gstinById[vendor.gstin],
+      });
+    }
+  }
+
+  const filtered = rows.filter((r) => {
+    if (briefFilter !== "all" && r.briefId !== briefFilter) return false;
+    if (statusFilter === "passed" && !r.passed) return false;
+    if (statusFilter === "failed" && r.passed) return false;
+    return true;
+  });
+
+  return (
+    <div className="flex flex-col gap-6">
+      <SectionTitle
+        eyebrow="Section B/C — Vendor discovery"
+        title="Every vendor, across every brief"
+        sub="The same firewall and GSTIN-trust results shown per-brief on the Briefs tab, flattened into one scannable list."
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={briefFilter}
+          onChange={(e) => setBriefFilter(e.target.value)}
+          className="rounded-lg border border-border-strong px-3 py-2 text-sm outline-none focus:border-brand-500"
+        >
+          <option value="all">All briefs</option>
+          {pipeline.briefs.map(({ brief }) => (
+            <option key={brief.id} value={brief.id}>
+              {brief.title}
+            </option>
+          ))}
+        </select>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-border-strong px-3 py-2 text-sm outline-none focus:border-brand-500"
+        >
+          <option value="all">All statuses</option>
+          <option value="passed">Passed</option>
+          <option value="failed">Failed</option>
+        </select>
+        <span className="text-xs text-text-dim">
+          {filtered.length} of {rows.length} vendor{rows.length === 1 ? "" : "s"}
+        </span>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border-strong p-8 text-center text-sm text-text-dim">
+          No vendors match these filters.
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="bg-surface-muted text-left text-[11px] font-medium uppercase tracking-wide text-text-dim">
+                <th className="px-3 py-2.5 font-medium">Vendor</th>
+                <th className="px-3 py-2.5 font-medium">Brief</th>
+                <th className="px-3 py-2.5 font-medium">Price</th>
+                <th className="px-3 py-2.5 font-medium">Delivery</th>
+                <th className="px-3 py-2.5 font-medium">Status</th>
+                <th className="px-3 py-2.5 font-medium">GSTIN</th>
+                <th className="px-3 py-2.5 font-medium">Reasons</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr key={r.key} className="border-t border-border">
+                  <td className="max-w-[180px] px-3 py-2.5">
+                    <div className="flex min-w-0 items-center gap-1.5">
+                      <span className="truncate text-text-hi">{r.vendor.name}</span>
+                      {r.gstin?.verdict && r.gstin?.is_msme_udyam && (
+                        <span className="shrink-0 rounded bg-success-50 px-1.5 py-0.5 text-[10px] font-medium text-success-700 ring-1 ring-inset ring-success-600/20">
+                          MSME
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="max-w-[160px] px-3 py-2.5">
+                    <div className="truncate text-text-mid">{r.briefTitle}</div>
+                  </td>
+                  <td className="px-3 py-2.5 font-mono text-text-hi">{inr(r.vendor.unit_price_inr)}</td>
+                  <td className="px-3 py-2.5 text-text-mid">{r.vendor.delivery_days}d</td>
+                  <td className="px-3 py-2.5">
+                    <span
+                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                        r.passed ? "bg-success-600 text-white" : "bg-danger-600 text-white"
+                      }`}
+                    >
+                      {r.passed ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={3} />}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span
+                      className={`w-fit max-w-full truncate rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                        r.gstin?.verdict ? "bg-surface text-text-dim ring-1 ring-border" : "bg-danger-50 text-danger-700"
+                      }`}
+                    >
+                      {r.gstin?.verdict ? "verified" : "invalid"}
+                    </span>
+                  </td>
+                  <td className="min-w-[160px] px-3 py-2.5 text-xs text-danger-700">
+                    {r.reasonsFailed.length > 0 ? (
+                      r.reasonsFailed.join("; ")
+                    ) : (
+                      <span className="text-text-dim">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -840,27 +1040,28 @@ function AdminTab() {
   );
 }
 
-function TryBriefTab() {
-  const [text, setText] = useState(
-    "Need 15 wireless presenter remotes, budget ₹900 per unit, delivery within 4 days, no warranty required"
-  );
+function TryBriefTab({ onSubmitted }) {
+  const [text, setText] = useState("Need 20 wireless mice, budget ₹500 per unit, delivery within 5 days");
   const [requestedBy, setRequestedBy] = useState("");
-  const [costCenter, setCostCenter] = useState("");
-  const [costCenters, setCostCenters] = useState([]);
-  const [result, setResult] = useState(null);
+  const [category, setCategory] = useState("");
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [testPersonal, setTestPersonal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
-  useEffect(() => {
-    api.listCostCenters().then(setCostCenters).catch(() => {});
-  }, []);
+  const canSubmit = !!text.trim() && !!requestedBy.trim() && !!category;
 
-  const run = async () => {
+  const submit = async () => {
+    if (!canSubmit) return;
     setBusy(true);
     setErr(null);
     try {
-      const r = await api.parseBrief(text, requestedBy || "Unknown requester", costCenter || "UNSPECIFIED");
-      setResult(r);
+      const { brief_id, pipeline } = await api.submitBrief(text, {
+        requestedBy: requestedBy.trim(),
+        category,
+        forceUnapprovedCostCenter: testPersonal,
+      });
+      onSubmitted(pipeline, brief_id);
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -872,26 +1073,26 @@ function TryBriefTab() {
     <div className="flex max-w-2xl flex-col gap-6">
       <SectionTitle
         eyebrow="LLM layer — proposes"
-        title="Natural-language brief → structured constraints"
-        sub="The LLM only ever drafts a proposal. It still gets validated by the same Pydantic schema the rest of the pipeline trusts, and every brief must declare a requester and cost center before it can ever be auto-approved."
+        title="Try a brief in plain English"
+        sub="The LLM only ever drafts a proposal — the same Pydantic schema the rest of the pipeline trusts still validates it. Name and category are required so every request is traceable to a person, even one that never gets past the firewall — submit and you'll land on it in the Briefs tab, evaluated for real."
       />
       <Card className="p-5">
         <div className="mb-3 grid grid-cols-2 gap-2">
           <input
             value={requestedBy}
             onChange={(e) => setRequestedBy(e.target.value)}
-            placeholder="Your name"
+            placeholder="Your name (required)"
             className="rounded-lg border border-border-strong px-3 py-2 text-sm outline-none focus:border-brand-500"
           />
           <select
-            value={costCenter}
-            onChange={(e) => setCostCenter(e.target.value)}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
             className="rounded-lg border border-border-strong px-3 py-2 text-sm outline-none focus:border-brand-500"
           >
-            <option value="">Cost center…</option>
-            {costCenters.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.code}
+            <option value="">Category (required)…</option>
+            {CATEGORY_OPTIONS.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.label}
               </option>
             ))}
           </select>
@@ -900,31 +1101,40 @@ function TryBriefTab() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={4}
+          placeholder="e.g. Need 20 wireless mice, budget ₹500 per unit, delivery within 5 days"
           className="w-full resize-none rounded-lg border border-border bg-surface p-3 text-sm text-text-hi outline-none placeholder:text-text-dim focus:border-brand-500"
         />
+
+        <button
+          onClick={() => setAdvancedOpen((o) => !o)}
+          className="mt-3 text-xs font-medium text-text-dim hover:text-text-mid hover:underline"
+        >
+          {advancedOpen ? "Hide" : "Show"} advanced options
+        </button>
+
+        {advancedOpen && (
+          <div className="mt-2 flex flex-col gap-2.5 rounded-lg border border-border bg-surface-muted/60 p-3">
+            <label className="flex items-start gap-2 text-xs text-text-mid">
+              <input
+                type="checkbox"
+                checked={testPersonal}
+                onChange={(e) => setTestPersonal(e.target.checked)}
+                className="mt-0.5"
+              />
+              Test personal-purchase prevention (submits against an unapproved cost center instead of the default)
+            </label>
+          </div>
+        )}
+
         <div className="mt-3">
-          <Button variant="ai" onClick={run} disabled={busy || !text.trim()}>
+          <Button variant="primary" onClick={submit} disabled={busy || !canSubmit}>
             <Sparkles size={14} />
-            {busy ? "Parsing…" : "Parse with LLM"}
+            {busy ? "Submitting…" : "Submit request"}
           </Button>
         </div>
       </Card>
 
       {err && <Card className="border-danger-600/30 bg-danger-50 p-4 text-sm text-danger-700">{err}</Card>}
-
-      {result && (
-        <Card className="overflow-hidden p-5">
-          <div className="mb-2 flex items-center gap-2">
-            <div className="text-xs font-medium uppercase tracking-wide text-text-dim">
-              Validated draft (BuyingBrief schema)
-            </div>
-            <AiTag>LLM proposed</AiTag>
-          </div>
-          <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-text-hi">
-            {JSON.stringify(result, null, 2)}
-          </pre>
-        </Card>
-      )}
     </div>
   );
 }

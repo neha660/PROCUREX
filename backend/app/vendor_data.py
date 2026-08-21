@@ -18,9 +18,18 @@ SHARED_POOL_TOTAL_INR = 65_00_000
 # Governance: approved cost centers + finance manager roster (Admin role)
 # ---------------------------------------------------------------------
 COST_CENTERS: list[CostCenter] = [
-    CostCenter(code="IGNITE26-LOGISTICS", label="Ignite '26 — Logistics & Ops"),
-    CostCenter(code="IGNITE26-STAGE", label="Ignite '26 — Main Stage Production"),
-    CostCenter(code="IGNITE26-MARKETING", label="Ignite '26 — Marketing & Swag"),
+    CostCenter(
+        code="IGNITE26-LOGISTICS", label="Ignite '26 — Logistics & Ops",
+        allowed_categories=["hardware_equipment"],
+    ),
+    CostCenter(
+        code="IGNITE26-STAGE", label="Ignite '26 — Main Stage Production",
+        allowed_categories=["stage_av"],
+    ),
+    CostCenter(
+        code="IGNITE26-MARKETING", label="Ignite '26 — Marketing & Swag",
+        allowed_categories=["print_swag_marketing"],
+    ),
 ]
 
 FINANCE_MANAGERS: list[FinanceManagerRecord] = [
@@ -39,6 +48,7 @@ BRIEFS: list[BuyingBrief] = [
         requires_warranty=True,
         requested_by="Ananya Iyer",
         cost_center="IGNITE26-LOGISTICS",
+        category="hardware_equipment",
         raw_text=(
             "We need 10 laptops for the AI Arena track. Minimum 16GB RAM and "
             "512GB SSD. Budget cap is Rs.45,000 per unit. Must arrive within 7 days "
@@ -54,6 +64,7 @@ BRIEFS: list[BuyingBrief] = [
         requires_warranty=False,
         requested_by="Rahul Menon",
         cost_center="IGNITE26-STAGE",
+        category="stage_av",
         raw_text=(
             "6 outdoor LED screens for the main stage, unit cap Rs.30,000, "
             "express 3-day delivery SLA — this is non-negotiable, the stage "
@@ -71,6 +82,7 @@ BRIEFS: list[BuyingBrief] = [
         bulk_tier_price_inr=740,
         requested_by="Priya Nair",
         cost_center="IGNITE26-MARKETING",
+        category="print_swag_marketing",
         raw_text=(
             "500 custom event hoodies for the swag desk, budget cap Rs.800/unit, "
             "bulk pricing should kick in at 500 units."
@@ -243,6 +255,123 @@ def inject_personal_purchase_brief() -> BuyingBrief:
         VENDORS.append(v.model_copy(update={"id": f"{v.id}-{suffix}", "brief_id": new_id}))
 
     return brief
+
+
+def inject_category_mismatch_brief() -> BuyingBrief:
+    """Demo helper for the category-mismatch scenario: injects a brief
+    tied to a VALID, approved cost center — so the plain cost-center-code
+    check alone would let it straight through — but whose category isn't
+    one that cost center actually covers. E.g. a gaming laptop request
+    routed through the Marketing & Swag budget line instead of Logistics.
+    This should never reach AUTO_APPROVED (see governance.py)."""
+    _INJECTED_COUNTER["n"] += 1
+    suffix = f"CATMISMATCH-{_INJECTED_COUNTER['n']}"
+    new_id = f"BRIEF-{suffix}"
+
+    brief = BuyingBrief(
+        id=new_id,
+        title="1 Gaming Laptop — tagged as Swag Desk spend",
+        quantity=1,
+        min_ram_gb=16,
+        min_ssd_gb=512,
+        max_unit_price_inr=45_000,
+        max_delivery_days=7,
+        requires_warranty=True,
+        requested_by="Unverified Submitter",
+        cost_center="IGNITE26-MARKETING",  # approved cost center...
+        category="hardware_equipment",  # ...but Marketing only covers print_swag_marketing
+        raw_text=(
+            "Need 1 gaming laptop, 16GB RAM, 512GB SSD, budget Rs.45,000, "
+            "delivery within 7 days — charge it to the swag desk budget."
+        ),
+    )
+    BRIEFS.append(brief)
+
+    # Reuse the laptop vendor pool so it's a fair, realistic evaluation —
+    # the point being demonstrated is the category gate, not vendor
+    # availability.
+    for v in vendors_for_brief("BRIEF-1-AI-ARENA"):
+        VENDORS.append(v.model_copy(update={"id": f"{v.id}-{suffix}", "brief_id": new_id}))
+
+    return brief
+
+
+def inject_user_submitted_brief(brief: BuyingBrief) -> BuyingBrief:
+    """Demo helper for the "Try a Brief" tab: takes an LLM-parsed,
+    Pydantic-validated brief built from an arbitrary free-text request and
+    injects it into the live scenario — plus a small set of synthetic
+    vendor listings sourced against its own constraints — so the next
+    pipeline run evaluates it for real through the firewall, scorer, and
+    authorisation logic instead of dead-ending as a JSON preview.
+
+    Mirrors inject_duplicate_brief / inject_personal_purchase_brief: gives
+    the brief a fresh id, appends it (and its vendors) to the live
+    in-memory seed data, and returns the injected brief."""
+    _INJECTED_COUNTER["n"] += 1
+    suffix = f"USER-{_INJECTED_COUNTER['n']}"
+    new_id = f"BRIEF-{suffix}"
+
+    live = brief.model_copy(update={"id": new_id})
+    BRIEFS.append(live)
+
+    cap = live.max_unit_price_inr
+    delivery = live.max_delivery_days
+    ram = live.min_ram_gb
+    ssd = live.min_ssd_gb
+
+    # Three synthetic listings sourced against the brief's own constraints:
+    # one clears everything, one runs slightly over the price cap (demos
+    # RFQ negotiation / shared-pool overage handling), one misses the
+    # delivery SLA and drops the warranty (demos the firewall actually
+    # excluding a non-compliant listing) — the same mix of outcomes the
+    # hand-authored seed vendors demonstrate for the built-in briefs.
+    listings = [
+        dict(
+            suffix="A", name="PrimeSupply Co.",
+            unit_price_inr=round(cap * 0.92, 2),
+            delivery_days=max(1, delivery - 1),
+            has_warranty=live.requires_warranty,
+            rating=4.6, return_window_days=10,
+            gstin=generate_valid_gstin("27", "AABCP4455K"),
+            source="IndiaMART", is_msme=False,
+            raw_listing_text=f"PrimeSupply Co. — {live.title}, in stock, ready to ship.",
+        ),
+        dict(
+            suffix="B", name="QuickTrade Vendors",
+            unit_price_inr=round(cap * 1.08, 2),
+            delivery_days=max(1, delivery - 1),
+            has_warranty=live.requires_warranty,
+            rating=4.3, return_window_days=7,
+            gstin=generate_valid_gstin("07", "AACQT9988R"),
+            source="TradeIndia", is_msme=True,
+            raw_listing_text=f"QuickTrade Vendors — {live.title}, express dispatch, premium pricing this week.",
+        ),
+        dict(
+            suffix="C", name="ValueMart Traders",
+            unit_price_inr=round(cap * 0.8, 2),
+            delivery_days=delivery + 2,
+            has_warranty=False,
+            rating=3.8, return_window_days=5,
+            gstin=generate_valid_gstin("29", "AAEVT7766P"),
+            source="Unverified listing site", is_msme=True,
+            raw_listing_text=f"ValueMart Traders — cheapest {live.title.lower()}, standard shipping.",
+        ),
+    ]
+
+    for spec in listings:
+        vendor_suffix = spec.pop("suffix")
+        VENDORS.append(
+            Vendor(
+                id=f"V-{suffix}-{vendor_suffix}",
+                brief_id=new_id,
+                ram_gb=ram,
+                ssd_gb=ssd,
+                in_stock=True,
+                **spec,
+            )
+        )
+
+    return live
 
 
 def inject_malformed_vendor(brief_id: str) -> Vendor:

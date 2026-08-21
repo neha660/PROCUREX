@@ -26,7 +26,7 @@ from typing import Optional
 
 import requests
 
-from .schemas import BuyingBrief, ScoredVendor
+from .schemas import BRIEF_CATEGORIES, BuyingBrief, ScoredVendor
 
 _MODEL = os.getenv("OPENROUTER_MODEL", "google/gemini-flash-latest")
 _API_KEY = os.getenv("OPENROUTER_API_KEY", "").strip()
@@ -74,13 +74,17 @@ _NUM_RE = r"\d[\d,]*(?:\.\d+)?"
 
 def parse_brief_nl(text: str, brief_id: str = "BRIEF-DRAFT") -> dict:
     """Draft-only: the caller MUST still pass this through BuyingBrief(**data)
-    so Pydantic validates types/ranges before anything downstream trusts it."""
+    so Pydantic validates types/ranges before anything downstream trusts it.
+    That includes `category` — this function only ever *proposes* one of
+    BRIEF_CATEGORIES; governance.py is what actually decides whether it's
+    plausible for the brief's declared cost center."""
     prompt = f"""Extract a structured procurement brief from this request.
 Return ONLY minified JSON with keys: title (string), quantity (int),
 min_ram_gb (int or null), min_ssd_gb (int or null),
 max_unit_price_inr (number), max_delivery_days (int),
 requires_warranty (bool), bulk_tier_qty (int or null),
-bulk_tier_price_inr (number or null).
+bulk_tier_price_inr (number or null),
+category (string — exactly one of {list(BRIEF_CATEGORIES)}).
 
 Request: \"\"\"{text}\"\"\""""
 
@@ -135,8 +139,39 @@ def _mock_parse_brief(text: str, brief_id: str) -> dict:
         "requires_warranty": warranty,
         "bulk_tier_qty": None,
         "bulk_tier_price_inr": None,
+        "category": _mock_guess_category(lower),
         "raw_text": text,
     }
+
+
+# Keyword groups for the offline category guesser, checked in order —
+# deliberately crude (this is a PROPOSAL only; governance.py decides what
+# actually matters) but enough to make the "Try a Brief" flow demoable
+# with zero external dependency, same as the rest of the mock parser.
+_CATEGORY_KEYWORDS = {
+    "hardware_equipment": (
+        "laptop", "macbook", "computer", "monitor", "mouse", "mice",
+        "keyboard", "tablet", "phone", "printer", "camera", "drone",
+        "router", "server", "hardware", "electronics", "headset", "webcam",
+    ),
+    "stage_av": (
+        "led screen", "led display", "projector", "speaker", "microphone",
+        "mic ", "sound system", "stage", "lighting", "truss", "av ",
+        "audio", "video wall", "display screen",
+    ),
+    "print_swag_marketing": (
+        "hoodie", "t-shirt", "tshirt", "shirt", "swag", "merch",
+        "banner", "poster", "flyer", "brochure", "lanyard", "badge",
+        "goodie bag", "sticker", "print",
+    ),
+}
+
+
+def _mock_guess_category(lower_text: str) -> str:
+    for category, keywords in _CATEGORY_KEYWORDS.items():
+        if any(kw in lower_text for kw in keywords):
+            return category
+    return "other"
 
 
 # --------------------------------------------------------------------------

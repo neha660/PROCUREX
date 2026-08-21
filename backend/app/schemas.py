@@ -49,6 +49,13 @@ class VendorExclusionReason(str, Enum):
     OUT_OF_STOCK = "Vendor out of stock"
 
 
+# Fixed set of purchase categories a brief can declare, and a cost center
+# can be scoped to. Deliberately small and closed — the LLM (llm.py) only
+# ever *proposes* one of these; governance.py is what actually decides
+# whether the category belongs under the brief's cost center.
+BRIEF_CATEGORIES = ("hardware_equipment", "stage_av", "print_swag_marketing", "other")
+
+
 class BuyingBrief(BaseModel):
     """A single procurement request. In production this is produced by
     the LLM parsing a natural-language brief; the fields themselves are
@@ -66,13 +73,23 @@ class BuyingBrief(BaseModel):
     bulk_tier_price_inr: Optional[float] = None
     raw_text: Optional[str] = None
 
-    # Governance fields — every brief must declare who it's for and which
-    # approved company budget line it draws against. This is the gate that
-    # keeps ProcureX from being usable for personal purchases: a brief
-    # with no cost-center, or one not on the approved list, can never
-    # reach AUTO_APPROVED — see governance.py.
+    # Governance fields — every brief must declare who it's for, which
+    # approved company budget line it draws against, and what kind of
+    # purchase it is. This is the gate that keeps ProcureX from being
+    # usable for personal purchases: a brief with no cost-center, one not
+    # on the approved list, or one whose category doesn't belong under
+    # that cost center, can never reach AUTO_APPROVED — see governance.py.
     requested_by: str = Field(default="Unknown requester")
     cost_center: str = Field(default="UNSPECIFIED")
+    category: str = Field(default="other")
+
+    @field_validator("category", mode="before")
+    @classmethod
+    def _normalize_category(cls, v):
+        # The LLM only ever proposes this value (llm.py) — if it proposes
+        # something outside the fixed set, code decides by degrading to
+        # "other" rather than rejecting the whole brief on a parse quirk.
+        return v if v in BRIEF_CATEGORIES else "other"
 
     @property
     def total_budget_inr(self) -> float:
@@ -83,6 +100,11 @@ class CostCenter(BaseModel):
     code: str
     label: str
     active: bool = True
+    # Which purchase categories this budget line actually covers — checked
+    # by governance.py after the cost-center-is-approved check. An empty
+    # list means "not scoped to any category yet", which governance.py
+    # treats as covering nothing (always escalate) rather than everything.
+    allowed_categories: list[str] = Field(default_factory=list)
 
 
 class FinanceManagerRecord(BaseModel):
