@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+@theme {
+  /* ---- Palette: light enterprise, with a deliberate dual-signal system --
+     brand (indigo) = deterministic code decisions
+     ai (amber)      = LLM-authored / proposed content
+     This pairing is used system-wide so the "LLM proposes, code decides"
+     philosophy is visible at a glance, not just explained in a paragraph. */
+  --color-canvas: #f6f7fb;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f9fafc;
+  --color-border: #e5e7f0;
+  --color-border-strong: #d7dae8;
+
+  --color-text-hi: #14172b;
+  --color-text-mid: #565b76;
+  --color-text-dim: #8a8fa8;
+
+  --color-brand-50: #eef1ff;
+  --color-brand-100: #e0e4ff;
+  --color-brand-500: #4f5fe0;
+  --color-brand-600: #4048d1;
+  --color-brand-700: #333abd;
+  --color-brand-900: #201f52;
+
+  --color-ai-50: #fef6ea;
+  --color-ai-100: #fdecc8;
+  --color-ai-500: #d9922e;
+  --color-ai-600: #b9761c;
+  --color-ai-700: #955f17;
+
+  --color-success-50: #ecfaf3;
+  --color-success-600: #10935e;
+  --color-success-700: #0b7a4d;
+
+  --color-warning-50: #fef7e8;
+  --color-warning-600: #b3790c;
+  --color-warning-700: #93630a;
+
+  --color-danger-50: #fdeeee;
+  --color-danger-600: #d1433a;
+  --color-danger-700: #b0362e;
+
+  --color-navy-900: #14172b;
+
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+}
+
+@layer base {
+  html {
+    background: var(--color-canvas);
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-text-hi);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--color-brand-100);
+    color: var(--color-brand-700);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+}
+
+@layer utilities {
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  .bg-grid {
+    background-image: radial-gradient(circle, var(--color-border-strong) 1px, transparent 1px);
+    background-size: 22px 22px;
+  }
+
+  @keyframes fade-up {
+    0% {
+      transform: translateY(6px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.35s ease-out both;
+  }
+
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+  .animate-pulse-soft {
+    animation: pulse-soft 1.8s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
