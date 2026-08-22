@@ -76,6 +76,30 @@ export default function App() {
   const [selectedBriefId, setSelectedBriefId] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
+  // Shared by every "Live demo" action below: each /api/simulate/* call
+  // already returns the full recomputed pipeline (same shape as
+  // /api/run's), so this applies it directly instead of a redundant
+  // second full pipeline run — and, critically, drives the same
+  // `loading` state the header's "Run pipeline" button already uses, so
+  // there's visible feedback while a live-LLM call is in flight (can
+  // legitimately take well over a minute) instead of the page looking
+  // frozen with no indication anything is happening.
+  const runAction = useCallback(async (action) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await action();
+      setPipeline(result);
+      setSelectedBriefId((prev) => prev || result.briefs?.[0]?.brief.id || null);
+      return result;
+    } catch (e) {
+      setError(e.message);
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -186,33 +210,22 @@ export default function App() {
                 pipeline={pipeline}
                 selectedBriefId={selectedBriefId}
                 setSelectedBriefId={setSelectedBriefId}
-                onOutage={async (vendorId) => {
-                  await api.simulateOutage(vendorId);
-                  await load();
-                }}
+                busy={loading}
+                onOutage={(vendorId) => runAction(() => api.simulateOutage(vendorId))}
                 onDuplicate={async (briefId) => {
-                  await api.simulateDuplicate(briefId);
-                  await load();
+                  await runAction(() => api.simulateDuplicate(briefId));
                   setTab("Escalations");
                 }}
                 onPersonal={async () => {
-                  await api.simulatePersonalPurchase();
-                  await load();
+                  await runAction(() => api.simulatePersonalPurchase());
                   setTab("Escalations");
                 }}
                 onCategoryMismatch={async () => {
-                  await api.simulateCategoryMismatch();
-                  await load();
+                  await runAction(() => api.simulateCategoryMismatch());
                   setTab("Escalations");
                 }}
-                onMalformed={async (briefId) => {
-                  await api.simulateMalformedVendor(briefId);
-                  await load();
-                }}
-                onReset={async () => {
-                  await api.simulateReset();
-                  await load();
-                }}
+                onMalformed={(briefId) => runAction(() => api.simulateMalformedVendor(briefId))}
+                onReset={() => runAction(() => api.simulateReset())}
               />
             )}
             {pipeline && tab === "Vendors" && <VendorsTab pipeline={pipeline} />}
@@ -530,6 +543,7 @@ function BriefsTab({
   onCategoryMismatch,
   onMalformed,
   onReset,
+  busy,
 }) {
   const active = pipeline.briefs.find((b) => b.brief.id === selectedBriefId) || pipeline.briefs[0];
   const blocked = !!active.result.governance_reason;
@@ -626,15 +640,25 @@ function BriefsTab({
         </Card>
       )}
 
+      {busy && (
+        <Card className="border-brand-500/25 bg-brand-50/40 p-4">
+          <div className="flex items-center gap-2.5 text-sm font-medium text-brand-700">
+            <RefreshCw size={14} className="shrink-0 animate-spin" />
+            Running the pipeline… with a live LLM key this can take up to a minute or two — every vendor listing
+            gets its own LLM call.
+          </div>
+        </Card>
+      )}
+
       <Card className="p-6">
         <SectionTitle eyebrow="Live demo" title="Simulate a vendor going out of stock" />
         <div className="flex flex-wrap gap-2">
           {active.result.ranked?.slice(0, 3).map((s) => (
-            <Button key={s.vendor.id} variant="secondary" onClick={() => onOutage(s.vendor.id)}>
+            <Button key={s.vendor.id} variant="secondary" disabled={busy} onClick={() => onOutage(s.vendor.id)}>
               Knock out #{s.rank} {s.vendor.name}
             </Button>
           ))}
-          <Button variant="ghost" onClick={onReset}>
+          <Button variant="ghost" disabled={busy} onClick={onReset}>
             Reset demo state
           </Button>
         </div>
@@ -647,10 +671,10 @@ function BriefsTab({
           sub="Two people on a team submit the same request independently — the clone is held for review instead of silently auto-approved."
         />
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => onDuplicate(active.brief.id)}>
+          <Button variant="secondary" disabled={busy} onClick={() => onDuplicate(active.brief.id)}>
             Submit a duplicate of "{active.brief.title}"
           </Button>
-          <Button variant="ghost" onClick={onReset}>
+          <Button variant="ghost" disabled={busy} onClick={onReset}>
             Reset demo state
           </Button>
         </div>
@@ -663,10 +687,10 @@ function BriefsTab({
           sub="A brief tied to a cost center that was never approved — held for a Finance Manager, however clean the vendor match looks."
         />
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={onPersonal}>
+          <Button variant="secondary" disabled={busy} onClick={onPersonal}>
             Submit a brief on an unapproved cost center
           </Button>
-          <Button variant="ghost" onClick={onReset}>
+          <Button variant="ghost" disabled={busy} onClick={onReset}>
             Reset demo state
           </Button>
         </div>
@@ -679,10 +703,10 @@ function BriefsTab({
           sub="A brief tagged with a valid, approved cost center — but for a category that budget line doesn't actually cover. An approved code alone isn't proof the item belongs there, however clean the vendor match looks."
         />
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={onCategoryMismatch}>
+          <Button variant="secondary" disabled={busy} onClick={onCategoryMismatch}>
             Submit a laptop request under the Swag budget
           </Button>
-          <Button variant="ghost" onClick={onReset}>
+          <Button variant="ghost" disabled={busy} onClick={onReset}>
             Reset demo state
           </Button>
         </div>
@@ -695,10 +719,10 @@ function BriefsTab({
           sub="A scraped listing with no description and no named source — excluded outright with a distinct data-quality reason, not silently treated as a pass just because nothing explicit failed."
         />
         <div className="flex flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => onMalformed(active.brief.id)}>
+          <Button variant="secondary" disabled={busy} onClick={() => onMalformed(active.brief.id)}>
             Inject a malformed listing for "{active.brief.title}"
           </Button>
-          <Button variant="ghost" onClick={onReset}>
+          <Button variant="ghost" disabled={busy} onClick={onReset}>
             Reset demo state
           </Button>
         </div>
